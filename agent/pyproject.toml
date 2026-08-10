@@ -1,0 +1,12 @@
+[project]
+name = "sentry-agent"
+version = "0.1.0"
+description = "Python MCP client for sentry-mcp"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

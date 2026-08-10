@@ -1,0 +1,7 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/sentry-core",
+    "crates/sentry-mcp",
+    "crates/sentry-tauri-ui/src-tauri",
+]
