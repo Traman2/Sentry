@@ -1,5 +1,14 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-use tauri::Window;
+use std::sync::Mutex;
+use tauri::{State, Window};
+
+struct MonitorState(Mutex<sentry_core::Monitor>);
+
+#[tauri::command]
+fn get_processes(state: State<MonitorState>) -> Vec<sentry_core::ProcessRow> {
+    let mut monitor = state.0.lock().unwrap();
+    monitor.snapshot().processes
+}
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -31,11 +40,13 @@ fn maximize_window(window: Window) {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .manage(MonitorState(Mutex::new(sentry_core::Monitor::new())))
         .invoke_handler(tauri::generate_handler![
             greet,
             close_window,
             minimize_window,
-            maximize_window
+            maximize_window,
+            get_processes
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -12,10 +12,10 @@
  * to re-theme the app.
  */
 @theme {
-  --color-canvas: #f6f6f6;
-  --color-mint: #c7ffd8;
-  --color-teal: #98ded9;
-  --color-navy: #161d6f;
+  --color-canvas: #ffffff;
+  --color-mint: #dbe8c8;
+  --color-teal: #93c3b8;
+  --color-navy: #26264f;
   --color-danger: #dc2626;
 }
 
@@ -24,15 +24,43 @@ body,
 #root {
   margin: 0;
   padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-teal) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar:horizontal {
+  height: 0;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--color-teal);
+  border-radius: 0;
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 .bg-dot-pattern {
-        background-color: #e3f5f3;
-        background-image:
-                linear-gradient(rgba(22,29,111,0.16) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(22,29,111,0.16) 1px, transparent 1px);
-        background-size: 12px 12px;
-    }
+  background-image:
+          linear-gradient(rgba(38,38,79,0.16) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(38,38,79,0.16) 1px, transparent 1px);
+  background-size: 12px 12px;
+}
 
 @theme inline {
   --font-heading: var(--font-sans);
@@ -75,8 +103,8 @@ body,
   --primary-foreground: var(--color-canvas);
   --secondary: var(--color-teal);
   --secondary-foreground: var(--color-navy);
-  --muted: #eaf6f5;
-  --muted-foreground: #5c6291;
+  --muted: color-mix(in srgb, var(--color-mint) 35%, var(--color-canvas));
+  --muted-foreground: color-mix(in srgb, var(--color-navy) 55%, var(--color-canvas));
   --accent: color-mix(in srgb, var(--color-teal) 30%, var(--color-canvas));
   --accent-foreground: var(--color-navy);
   --destructive: var(--color-danger);
