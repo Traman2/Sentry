@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
-import type { ProcessRow } from "./types";
+import type { AppRow } from "./types";
 
 function ToolbarButton({
   icon,
@@ -32,7 +32,7 @@ function ToolbarButton({
   );
 }
 
-export function Toolbar({ table }: { table: Table<ProcessRow> }) {
+export function Toolbar({ table }: { table: Table<AppRow> }) {
   const nameColumn = table.getColumn("name");
 
   return (

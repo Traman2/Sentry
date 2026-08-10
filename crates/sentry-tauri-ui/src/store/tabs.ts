@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { TABS, type TabType } from "../config/tabs";
+import type { TabType } from "../config/tabs";
 
 export type { TabType };
 
@@ -17,13 +17,11 @@ interface TabStore {
   setActiveTab: (id: string) => void;
 }
 
-const defaultTab = TABS[0];
+const defaultTab: Tab = { id: "welcome", type: "welcome", title: "Welcome" };
 
 export const useTabStore = create<TabStore>((set, get) => ({
-  tabs: [
-    { id: defaultTab.defaultId, type: defaultTab.type, title: defaultTab.defaultTitle },
-  ],
-  activeTabId: defaultTab.defaultId,
+  tabs: [defaultTab],
+  activeTabId: defaultTab.id,
 
   openTab: (tab) => {
     const exists = get().tabs.some((t) => t.id === tab.id);

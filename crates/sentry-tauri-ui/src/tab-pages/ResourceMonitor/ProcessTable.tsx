@@ -1,14 +1,14 @@
 import { type Table, flexRender } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { ProcessRow } from "./types";
+import type { AppRow } from "./types";
 
 export function ProcessTable({
   table,
   selectedPid,
   onSelectRow,
 }: {
-  table: Table<ProcessRow>;
+  table: Table<AppRow>;
   selectedPid: number | null;
   onSelectRow: (pid: number) => void;
 }) {

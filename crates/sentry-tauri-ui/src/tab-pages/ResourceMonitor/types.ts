@@ -7,13 +7,22 @@ export interface ProcessRow {
   start_time_unix_secs: number;
   cpu_usage_percent: number;
   cpu_usage_display: string;
+  memory_bytes: number;
   memory_display: string;
+  memory_percent: number;
   memory_percent_display: string;
 
   disk_read_bytes_per_sec: number;
   disk_read_display: string;
   disk_written_bytes_per_sec: number;
   disk_write_display: string;
+}
+
+/** One row of the process table: an app aggregating one or more PIDs. */
+export interface AppRow extends ProcessRow {
+  pid_count: number;
+  /** Individual PIDs backing this app, present only when pid_count > 1. */
+  subRows?: AppRow[];
 }
 
 export interface NetworkInterfaceMetrics {

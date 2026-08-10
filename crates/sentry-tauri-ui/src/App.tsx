@@ -1,3 +1,4 @@
+import AppLogo from "./components/AppLogo";
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import SidePanel from "./components/SidePanel";
@@ -11,7 +12,8 @@ function App() {
       <div className="bg-dot-pattern flex flex-1 w-full overflow-hidden">
         <Sidebar />
         <SidePanel />
-        <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="relative flex flex-1 flex-col overflow-hidden">
+          <AppLogo />
           <TabBar />
           <TabContent />
         </div>

@@ -1,6 +1,6 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp } from "lucide-react";
-import type { ProcessRow } from "./types";
+import { ArrowDown, ArrowUp, ChevronRight } from "lucide-react";
+import type { AppRow } from "./types";
 
 function healthColor(percent: number) {
   if (percent >= 50) return "var(--color-danger)";
@@ -8,14 +8,17 @@ function healthColor(percent: number) {
   return "#3fa66b";
 }
 
-export const processColumns: ColumnDef<ProcessRow>[] = [
+export const processColumns: ColumnDef<AppRow>[] = [
   {
     accessorKey: "name",
     header: "Name",
     size: 220,
     cell: ({ row }) => (
-      <div className="flex items-center gap-3">
-        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-teal/40 text-[10px] font-semibold text-navy">
+      <div
+        className="flex items-center gap-3"
+        style={{ paddingLeft: row.depth > 0 ? 28 : 0 }}
+      >
+        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-teal/40 text-[10px] font-semibold text-navy">
           {row.original.name.slice(0, 1).toUpperCase()}
         </div>
         <div className="min-w-0">
@@ -23,9 +26,24 @@ export const processColumns: ColumnDef<ProcessRow>[] = [
             {row.original.name}
           </div>
           <div className="truncate text-[11px] text-muted-foreground">
-            PID {row.original.pid}
+            {row.depth === 0 && row.original.pid_count > 1
+              ? `${row.original.pid_count} processes`
+              : `PID ${row.original.pid}`}
           </div>
         </div>
+        {row.getCanExpand() && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              row.toggleExpanded();
+            }}
+            className="ml-auto flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded hover:bg-teal/25"
+          >
+            <ChevronRight
+              className={`h-3.5 w-3.5 text-navy/60 transition-transform ${row.getIsExpanded() ? "rotate-90" : ""}`}
+            />
+          </button>
+        )}
       </div>
     ),
   },

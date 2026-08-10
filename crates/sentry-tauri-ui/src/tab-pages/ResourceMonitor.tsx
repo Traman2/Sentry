@@ -1,20 +1,23 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
+  type ExpandedState,
   type SortingState,
   type VisibilityState,
   getCoreRowModel,
+  getExpandedRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { PaginationBar } from "./resource-monitor/PaginationBar";
-import { ProcessTable } from "./resource-monitor/ProcessTable";
-import { SelectionActionBar } from "./resource-monitor/SelectionActionBar";
-import { Toolbar } from "./resource-monitor/Toolbar";
-import { processColumns } from "./resource-monitor/columns";
-import type { ProcessRow } from "./resource-monitor/types";
-import { useSystemSnapshot } from "./resource-monitor/useSystemSnapshot";
+import { PaginationBar } from "./ResourceMonitor/PaginationBar";
+import { ProcessTable } from "./ResourceMonitor/ProcessTable";
+import { SelectionActionBar } from "./ResourceMonitor/SelectionActionBar";
+import { Toolbar } from "./ResourceMonitor/Toolbar";
+import { processColumns } from "./ResourceMonitor/columns";
+import { groupProcessesByApp } from "./ResourceMonitor/groupProcesses";
+import type { ProcessRow } from "./ResourceMonitor/types";
+import { useSystemSnapshot } from "./ResourceMonitor/useSystemSnapshot";
 
 function ResourceMonitor() {
   const snapshot = useSystemSnapshot();
@@ -22,20 +25,30 @@ function ResourceMonitor() {
     { id: "cpu_usage_percent", desc: true },
   ]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [expanded, setExpanded] = useState<ExpandedState>({});
   const [selectedPid, setSelectedPid] = useState<number | null>(null);
 
+  const appRows = useMemo(
+    () => groupProcessesByApp(snapshot.processes),
+    [snapshot.processes],
+  );
+
   const table = useReactTable({
-    data: snapshot.processes,
+    data: appRows,
     columns: processColumns,
-    state: { sorting, columnVisibility },
+    state: { sorting, columnVisibility, expanded },
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
+    onExpandedChange: setExpanded,
+    getSubRows: (row) => row.subRows,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getExpandedRowModel: getExpandedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     initialState: { pagination: { pageSize: 40 } },
     autoResetPageIndex: false,
+    autoResetExpanded: false,
   });
 
   const selectedProcess = snapshot.processes.find((p) => p.pid === selectedPid) ?? null;
@@ -63,7 +76,7 @@ function ResourceMonitor() {
           onTrack={handleTrack}
         />
       )}
-      <PaginationBar table={table} totalCount={snapshot.processes.length} />
+      <PaginationBar table={table} totalCount={appRows.length} />
     </div>
   );
 }

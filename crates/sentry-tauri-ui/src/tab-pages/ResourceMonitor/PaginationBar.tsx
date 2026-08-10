@@ -1,19 +1,19 @@
 import type { Table } from "@tanstack/react-table";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { ProcessRow } from "./types";
+import type { AppRow } from "./types";
 
 export function PaginationBar({
   table,
   totalCount,
 }: {
-  table: Table<ProcessRow>;
+  table: Table<AppRow>;
   totalCount: number;
 }) {
   return (
     <div className="flex items-center justify-between border-t border-teal px-4 py-2.5 text-[11px] text-muted-foreground">
       <span>
         Page {table.getState().pagination.pageIndex + 1} of{" "}
-        {Math.max(table.getPageCount(), 1)} · {totalCount} processes
+        {Math.max(table.getPageCount(), 1)} · {totalCount} apps
       </span>
       <div className="flex items-center gap-1">
         <button
