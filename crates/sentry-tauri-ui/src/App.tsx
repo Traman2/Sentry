@@ -1,21 +1,20 @@
-import { HashRouter, Route, Routes } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
-import Home from "./pages/Home";
+import SidePanel from "./components/SidePanel";
+import TabBar from "./components/TabBar";
+import TabContent from "./components/TabContent";
 
 function App() {
   return (
     <div className="flex h-screen w-screen flex-col">
       <Navbar />
-      <div className="flex flex-1 w-full overflow-hidden">
+      <div className="bg-dot-pattern flex flex-1 w-full overflow-hidden">
         <Sidebar />
-        <main className="bg-dot-pattern flex-1 overflow-auto">
-          <HashRouter>
-            <Routes>
-              <Route path="/" element={<Home />} />
-            </Routes>
-          </HashRouter>
-        </main>
+        <SidePanel />
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <TabBar />
+          <TabContent />
+        </div>
       </div>
     </div>
   );
