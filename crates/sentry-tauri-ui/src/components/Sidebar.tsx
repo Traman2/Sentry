@@ -6,7 +6,7 @@ function Sidebar() {
   const togglePanel = usePanelStore((state) => state.togglePanel);
 
   return (
-    <div className="flex h-full w-10 flex-col items-center gap-0.5 bg-canvas border-r border-teal p-1 select-none">
+    <div className="flex h-full w-10 flex-col items-center gap-1.5 bg-canvas border-r border-teal p-1 select-none">
       {PANELS.map(({ id, icon, label }) => {
         const isActive = activePanel === id;
         return (

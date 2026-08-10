@@ -5,9 +5,9 @@ use tauri::{State, Window};
 struct MonitorState(Mutex<sentry_core::Monitor>);
 
 #[tauri::command]
-fn get_processes(state: State<MonitorState>) -> Vec<sentry_core::ProcessRow> {
+fn get_snapshot(state: State<MonitorState>) -> sentry_core::SystemSnapshot {
     let mut monitor = state.0.lock().unwrap();
-    monitor.snapshot().processes
+    monitor.snapshot()
 }
 
 #[tauri::command]
@@ -46,7 +46,7 @@ pub fn run() {
             close_window,
             minimize_window,
             maximize_window,
-            get_processes
+            get_snapshot
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
