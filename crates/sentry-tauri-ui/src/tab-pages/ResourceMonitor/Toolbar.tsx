@@ -10,7 +10,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
-import type { AppRow } from "./types";
+import { useModalStore } from "../../store/modal";
+import ExportSummaryModal from "../../modals/ExportSummaryModal";
+import type { AppRow, SystemSnapshot } from "./types";
 
 function ToolbarButton({
   icon,
@@ -32,8 +34,15 @@ function ToolbarButton({
   );
 }
 
-export function Toolbar({ table }: { table: Table<AppRow> }) {
+export function Toolbar({
+  table,
+  snapshot,
+}: {
+  table: Table<AppRow>;
+  snapshot: SystemSnapshot;
+}) {
   const nameColumn = table.getColumn("name");
+  const openModal = useModalStore((state) => state.openModal);
 
   return (
     <div className="flex items-center justify-between border-b border-teal px-4 py-2.5">
@@ -69,7 +78,11 @@ export function Toolbar({ table }: { table: Table<AppRow> }) {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <ToolbarButton icon={<Upload className="h-3.5 w-3.5" />} label="Export" />
+        <ToolbarButton
+          icon={<Upload className="h-3.5 w-3.5" />}
+          label="Export"
+          onClick={() => openModal(<ExportSummaryModal snapshot={snapshot} />)}
+        />
       </div>
     </div>
   );

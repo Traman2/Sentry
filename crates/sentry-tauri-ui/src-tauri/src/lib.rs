@@ -1,6 +1,7 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use std::sync::Mutex;
-use tauri::{State, Window};
+use tauri::{AppHandle, State, Window};
+use tauri_plugin_opener::OpenerExt;
 
 struct MonitorState(Mutex<sentry_core::Monitor>);
 
@@ -26,6 +27,14 @@ fn minimize_window(window: Window) {
 }
 
 #[tauri::command]
+fn write_and_open_file(app: AppHandle, path: String, contents: String) -> Result<(), String> {
+    std::fs::write(&path, contents).map_err(|e| e.to_string())?;
+    app.opener()
+        .open_path(&path, None::<&str>)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn maximize_window(window: Window) {
     if let Ok(is_maximized) = window.is_maximized() {
         if is_maximized {
@@ -40,13 +49,15 @@ fn maximize_window(window: Window) {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(MonitorState(Mutex::new(sentry_core::Monitor::new())))
         .invoke_handler(tauri::generate_handler![
             greet,
             close_window,
             minimize_window,
             maximize_window,
-            get_snapshot
+            get_snapshot,
+            write_and_open_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

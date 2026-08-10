@@ -67,7 +67,7 @@ function ResourceMonitor() {
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden rounded-lg border border-teal bg-canvas shadow-sm">
-      <Toolbar table={table} />
+      <Toolbar table={table} snapshot={snapshot} />
       <ProcessTable table={table} selectedPid={selectedPid} onSelectRow={handleSelectRow} />
       {selectedProcess && (
         <SelectionActionBar
