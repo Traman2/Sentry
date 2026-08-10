@@ -55,3 +55,13 @@ export function groupProcessesByApp(processes: ProcessRow[]): AppRow[] {
 function sum<T>(items: T[], select: (item: T) => number): number {
   return items.reduce((total, item) => total + select(item), 0);
 }
+
+/** Finds a row (top-level app or one of its subRows) by pid. */
+export function findAppRowByPid(rows: AppRow[], pid: number): AppRow | null {
+  for (const row of rows) {
+    if (row.pid === pid) return row;
+    const child = row.subRows?.find((subRow) => subRow.pid === pid);
+    if (child) return child;
+  }
+  return null;
+}

@@ -10,13 +10,15 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import ViewMoreModal from "../modals/ViewMoreModal";
+import { useModalStore } from "../store/modal";
 import { PaginationBar } from "./ResourceMonitor/PaginationBar";
 import { ProcessTable } from "./ResourceMonitor/ProcessTable";
 import { SelectionActionBar } from "./ResourceMonitor/SelectionActionBar";
 import { Toolbar } from "./ResourceMonitor/Toolbar";
 import { processColumns } from "./ResourceMonitor/columns";
-import { groupProcessesByApp } from "./ResourceMonitor/groupProcesses";
-import type { ProcessRow } from "./ResourceMonitor/types";
+import { findAppRowByPid, groupProcessesByApp } from "./ResourceMonitor/groupProcesses";
+import type { AppRow } from "./ResourceMonitor/types";
 import { useSystemSnapshot } from "./ResourceMonitor/useSystemSnapshot";
 
 function ResourceMonitor() {
@@ -31,7 +33,7 @@ function ResourceMonitor() {
   const appRows = useMemo(
     () => groupProcessesByApp(snapshot.processes),
     [snapshot.processes],
-  );
+);
 
   const table = useReactTable({
     data: appRows,
@@ -51,18 +53,27 @@ function ResourceMonitor() {
     autoResetExpanded: false,
   });
 
-  const selectedProcess = snapshot.processes.find((p) => p.pid === selectedPid) ?? null;
+  const openModal = useModalStore((state) => state.openModal);
+
+  const selectedProcess = useMemo(
+    () => (selectedPid == null ? null : findAppRowByPid(appRows, selectedPid)),
+    [appRows, selectedPid],
+  );
 
   const handleSelectRow = (pid: number) => {
     setSelectedPid((current) => (current === pid ? null : pid));
   };
 
-  const handleViewMore = (process: ProcessRow) => {
-    console.log("View more", process);
+  const handleViewMore = (row: AppRow) => {
+    openModal(<ViewMoreModal row={row} />);
   };
 
-  const handleTrack = (process: ProcessRow) => {
-    console.log("Track", process);
+  const handleTrack = (row: AppRow) => {
+    console.log("Track", row);
+  };
+
+  const handleKill = (row: AppRow) => {
+    console.log("Kill", row);
   };
 
   return (
@@ -74,6 +85,7 @@ function ResourceMonitor() {
           process={selectedProcess}
           onViewMore={handleViewMore}
           onTrack={handleTrack}
+          onKill={handleKill}
         />
       )}
       <PaginationBar table={table} totalCount={appRows.length} />

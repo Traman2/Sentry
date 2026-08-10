@@ -1,12 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ChevronRight } from "lucide-react";
+import Gauge from "@/components/Gauge";
 import type { AppRow } from "./types";
-
-function healthColor(percent: number) {
-  if (percent >= 50) return "var(--color-danger)";
-  if (percent >= 15) return "#c9a227";
-  return "#3fa66b";
-}
 
 export const processColumns: ColumnDef<AppRow>[] = [
   {
@@ -51,45 +46,12 @@ export const processColumns: ColumnDef<AppRow>[] = [
     accessorKey: "cpu_usage_percent",
     header: "CPU",
     size: 100,
-    cell: ({ row }) => {
-      const percent = Math.min(Math.max(row.original.cpu_usage_percent, 0), 100);
-      const color = healthColor(row.original.cpu_usage_percent);
-      const size = 12;
-      const strokeWidth = 2;
-      const radius = (size - strokeWidth) / 2;
-      const circumference = 2 * Math.PI * radius;
-      const dash = (percent / 100) * circumference;
-      return (
-        <div className="flex items-center gap-2">
-          <svg
-            width={size}
-            height={size}
-            viewBox={`0 0 ${size} ${size}`}
-            className="-rotate-90 shrink-0"
-          >
-            <circle
-              cx={size / 2}
-              cy={size / 2}
-              r={radius}
-              fill="none"
-              stroke="rgba(38,38,79,0.15)"
-              strokeWidth={strokeWidth}
-            />
-            <circle
-              cx={size / 2}
-              cy={size / 2}
-              r={radius}
-              fill="none"
-              stroke={color}
-              strokeWidth={strokeWidth}
-              strokeLinecap="round"
-              strokeDasharray={`${dash} ${circumference}`}
-            />
-          </svg>
-          <span className="text-xs text-navy">{row.original.cpu_usage_display}</span>
-        </div>
-      );
-    },
+    cell: ({ row }) => (
+      <div className="flex items-center gap-2">
+        <Gauge percent={row.original.cpu_usage_percent} />
+        <span className="text-xs text-navy">{row.original.cpu_usage_display}</span>
+      </div>
+    ),
   },
   {
     accessorKey: "memory_display",

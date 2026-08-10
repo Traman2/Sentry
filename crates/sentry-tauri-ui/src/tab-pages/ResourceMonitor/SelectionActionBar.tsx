@@ -1,15 +1,17 @@
-import { Eye, Radar } from "lucide-react";
+import { Eye, OctagonX, Radar } from "lucide-react";
 import { Button } from "../../components/ui/button";
-import type { ProcessRow } from "./types";
+import type { AppRow } from "./types";
 
 export function SelectionActionBar({
   process,
   onViewMore,
   onTrack,
+  onKill,
 }: {
-  process: ProcessRow;
-  onViewMore: (process: ProcessRow) => void;
-  onTrack: (process: ProcessRow) => void;
+  process: AppRow;
+  onViewMore: (process: AppRow) => void;
+  onTrack: (process: AppRow) => void;
+  onKill: (process: AppRow) => void;
 }) {
   return (
     <div className="flex items-center justify-between border-t border-teal bg-teal/10 px-4 py-2">
@@ -25,6 +27,15 @@ export function SelectionActionBar({
         <Button size="sm" variant="default" onClick={() => onTrack(process)}>
           <Radar className="h-3.5 w-3.5" />
           Track
+        </Button>
+        <Button
+          size="sm"
+          variant="destructive"
+          className="bg-destructive text-white hover:bg-destructive/90 dark:bg-destructive dark:text-white dark:hover:bg-destructive/90"
+          onClick={() => onKill(process)}
+        >
+          <OctagonX className="h-3.5 w-3.5" />
+          Terminate
         </Button>
       </div>
     </div>
