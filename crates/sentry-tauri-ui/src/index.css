@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+}
+
+.bg-dot-pattern {
+        background-image:
+                linear-gradient(rgba(196,189,180,0.35) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(196,189,180,0.35) 1px, transparent 1px);
+        background-size: 12px 12px;
+    }

@@ -1,21 +1,23 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
-import "./App.css";
+import { HashRouter, Route, Routes } from "react-router-dom";
+import Navbar from "./components/Navbar";
+import Sidebar from "./components/Sidebar";
+import Home from "./pages/Home";
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
-
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
-
   return (
-    <>
-      <p>Hello world</p>
-    </>
+    <div className="flex h-screen w-screen flex-col">
+      <Navbar />
+      <div className="flex flex-1 w-full overflow-hidden">
+        <Sidebar />
+        <main className="bg-dot-pattern flex-1 overflow-auto">
+          <HashRouter>
+            <Routes>
+              <Route path="/" element={<Home />} />
+            </Routes>
+          </HashRouter>
+        </main>
+      </div>
+    </div>
   );
 }
 

@@ -13,9 +13,10 @@
     "windows": [
       {
         "title": "sentry-tauri-ui",
-        "width": 800,
-        "height": 600,
-        "decorations": false
+        "width": 1200,
+        "height": 800,
+        "decorations": false,
+        "center": true
       }
     ],
     "security": {
