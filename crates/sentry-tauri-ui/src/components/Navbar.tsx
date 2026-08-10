@@ -4,6 +4,7 @@ import minimizeIcon from "/main-navbuttons/minimize.svg";
 import maximizeIcon from "/main-navbuttons/maximize.svg";
 import sentryLogo from "/sentry-logo.svg";
 import { TABS } from "../config/tabs";
+import { useModalStore } from "../store/modal";
 import { useTabStore } from "../store/tabs";
 import {
   Menubar,
@@ -16,6 +17,7 @@ import {
 
 function Navbar() {
   const openTab = useTabStore((state) => state.openTab);
+  const isModalOpen = useModalStore((state) => state.isOpen);
 
   return (
     <div className="flex h-10 w-full items-center bg-canvas border-b border-teal select-none">
@@ -27,10 +29,12 @@ function Navbar() {
         <img
           src={sentryLogo}
           alt="Sentry"
-          className="h-4 w-auto pointer-events-none"
+          className={`h-4 w-auto pointer-events-none transition-opacity ${isModalOpen ? "opacity-30" : ""}`}
         />
       </div>
-      <div className="flex h-full items-center">
+      <div
+        className={`flex h-full items-center transition-opacity ${isModalOpen ? "pointer-events-none opacity-30" : ""}`}
+      >
         <Menubar className="border-none bg-transparent shadow-none">
           <MenubarMenu>
             <MenubarTrigger className="text-navy">File</MenubarTrigger>
