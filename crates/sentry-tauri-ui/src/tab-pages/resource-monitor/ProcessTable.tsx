@@ -1,8 +1,17 @@
 import { type Table, flexRender } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { ProcessRow } from "./types";
 
-export function ProcessTable({ table }: { table: Table<ProcessRow> }) {
+export function ProcessTable({
+  table,
+  selectedPid,
+  onSelectRow,
+}: {
+  table: Table<ProcessRow>;
+  selectedPid: number | null;
+  onSelectRow: (pid: number) => void;
+}) {
   return (
     <div className="flex-1 overflow-y-auto overflow-x-auto">
       <table
@@ -38,7 +47,14 @@ export function ProcessTable({ table }: { table: Table<ProcessRow> }) {
         </thead>
         <tbody>
           {table.getRowModel().rows.map((row) => (
-            <tr key={row.id} className="border-b border-teal/50 hover:bg-teal/10">
+            <tr
+              key={row.id}
+              onClick={() => onSelectRow(row.original.pid)}
+              className={cn(
+                "cursor-pointer border-b border-teal/50 hover:bg-teal/10",
+                selectedPid === row.original.pid && "bg-teal/20 hover:bg-teal/20",
+              )}
+            >
               {row.getVisibleCells().map((cell) => (
                 <td
                   key={cell.id}
