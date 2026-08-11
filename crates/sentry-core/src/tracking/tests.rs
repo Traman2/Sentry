@@ -52,7 +52,10 @@ fn set_archive_path_updates_the_session() {
         .set_archive_path(session.id, "/data/tracked/1.json")
         .unwrap()
         .unwrap();
-    assert_eq!(archived.archive_path, Some("/data/tracked/1.json".to_string()));
+    assert_eq!(
+        archived.archive_path,
+        Some("/data/tracked/1.json".to_string())
+    );
 }
 
 #[test]
