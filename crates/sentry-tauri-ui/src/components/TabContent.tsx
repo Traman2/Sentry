@@ -4,7 +4,7 @@ import { useTabStore, type TabType } from "../store/tabs";
 
 const TAB_PAGES = Object.fromEntries(
   TABS.map((t) => [t.type, t.component]),
-) as Record<TabType, ComponentType>;
+) as Record<TabType, ComponentType<{ tabId: string }>>;
 
 function TabContent() {
   const tabs = useTabStore((state) => state.tabs);
@@ -20,7 +20,7 @@ function TabContent() {
             style={{ display: tab.id === activeTabId ? "block" : "none" }}
             className="h-full w-full overflow-hidden"
           >
-            <Page />
+            <Page tabId={tab.id} />
           </div>
         );
       })}

@@ -4,7 +4,7 @@
 use serde::Serialize;
 use sysinfo::Disks;
 
-use super::units::format_bytes;
+use super::units::{format_bytes, format_percent};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct DiskMetrics {
@@ -54,7 +54,7 @@ pub fn collect(disks: &Disks) -> Vec<DiskMetrics> {
                 used_bytes,
                 used_display: format_bytes(used_bytes),
                 used_percent,
-                used_percent_display: format!("{used_percent:.1}%"),
+                used_percent_display: format_percent(used_percent),
             }
         })
         .collect()

@@ -11,7 +11,9 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import ViewMoreModal from "../modals/ViewMoreModal";
+import { useChatStore } from "../store/chat";
 import { useModalStore } from "../store/modal";
+import { useTabStore } from "../store/tabs";
 import { PaginationBar } from "./ResourceMonitor/PaginationBar";
 import { ProcessTable } from "./ResourceMonitor/ProcessTable";
 import { SelectionActionBar } from "./ResourceMonitor/SelectionActionBar";
@@ -54,6 +56,8 @@ function ResourceMonitor() {
   });
 
   const openModal = useModalStore((state) => state.openModal);
+  const createChatSpaceWithMessage = useChatStore((state) => state.createChatSpaceWithMessage);
+  const openTab = useTabStore((state) => state.openTab);
 
   const selectedProcess = useMemo(
     () => (selectedPid == null ? null : findAppRowByPid(appRows, selectedPid)),
@@ -72,6 +76,11 @@ function ResourceMonitor() {
     console.log("Track", row);
   };
 
+  const handleAskAi = async (row: AppRow) => {
+    const detail = await createChatSpaceWithMessage(`Please tell me more about ${row.name}`);
+    openTab({ id: String(detail.id), type: "chat-space", title: detail.title });
+  };
+
   const handleKill = (row: AppRow) => {
     console.log("Kill", row);
   };
@@ -85,6 +94,7 @@ function ResourceMonitor() {
           process={selectedProcess}
           onViewMore={handleViewMore}
           onTrack={handleTrack}
+          onAskAi={handleAskAi}
           onKill={handleKill}
         />
       )}

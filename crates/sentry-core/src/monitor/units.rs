@@ -34,3 +34,29 @@ pub fn format_bytes_per_sec(bytes_per_sec: u64) -> String {
 pub fn format_percent(value: f32) -> String {
     format!("{value:.1}%")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn format_bytes_picks_the_right_unit() {
+        assert_eq!(format_bytes(0), "0 B");
+        assert_eq!(format_bytes(1023), "1023 B");
+        assert_eq!(format_bytes(1024), "1.00 KB");
+        assert_eq!(format_bytes(MIB as u64), "1.00 MB");
+        assert_eq!(format_bytes(GIB as u64), "1.00 GB");
+        assert_eq!(format_bytes(TIB as u64), "1.00 TB");
+    }
+
+    #[test]
+    fn format_bytes_per_sec_appends_rate_suffix() {
+        assert_eq!(format_bytes_per_sec(1024), "1.00 KB/s");
+    }
+
+    #[test]
+    fn format_percent_rounds_to_one_decimal() {
+        assert_eq!(format_percent(12.345), "12.3%");
+        assert_eq!(format_percent(0.0), "0.0%");
+    }
+}

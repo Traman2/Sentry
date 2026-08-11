@@ -1,7 +1,7 @@
 //! Per-process metrics, shaped as flat table rows.
 
 use serde::Serialize;
-use sysinfo::{Process, System, Users};
+use sysinfo::{Pid, Process, System, Users};
 
 use super::units::{format_bytes, format_bytes_per_sec, format_percent};
 
@@ -10,6 +10,12 @@ use super::units::{format_bytes, format_bytes_per_sec, format_percent};
 ///
 /// Numeric fields are kept alongside `_display` counterparts so a UI can sort/filter on
 /// the raw number while showing the formatted string.
+///
+/// Deliberately excludes a process's environment variables, working directory, and
+/// root directory: those can contain secrets (tokens, credentials in env vars) and
+/// are only useful when inspecting one specific process, not for a table listing
+/// every process on the machine every polling tick. Fetch them on demand instead via
+/// [`details`].
 #[derive(Debug, Clone, Serialize)]
 pub struct ProcessRow {
     pub pid: u32,
@@ -19,6 +25,11 @@ pub struct ProcessRow {
     pub command: String,
     pub status: String,
     pub user: Option<String>,
+    pub effective_user: Option<String>,
+    pub group_id: Option<String>,
+    pub effective_group_id: Option<String>,
+    pub session_id: Option<u32>,
+    pub thread_count: Option<usize>,
 
     pub start_time_unix_secs: u64,
     pub run_time_secs: u64,
@@ -88,6 +99,14 @@ fn row_from_process(process: &Process, users: &Users, total_memory_bytes: u64) -
             .user_id()
             .and_then(|uid| users.get_user_by_id(uid))
             .map(|user| user.name().to_string()),
+        effective_user: process
+            .effective_user_id()
+            .and_then(|uid| users.get_user_by_id(uid))
+            .map(|user| user.name().to_string()),
+        group_id: process.group_id().map(|gid| gid.to_string()),
+        effective_group_id: process.effective_group_id().map(|gid| gid.to_string()),
+        session_id: process.session_id().map(|pid| pid.as_u32()),
+        thread_count: process.tasks().map(|tasks| tasks.len()),
 
         start_time_unix_secs: process.start_time(),
         run_time_secs: process.run_time(),
@@ -112,4 +131,36 @@ fn row_from_process(process: &Process, users: &Users, total_memory_bytes: u64) -
         disk_total_written_bytes: disk.total_written_bytes,
         disk_total_write_display: format_bytes(disk.total_written_bytes),
     }
+}
+
+/// On-demand detail for a single process: environment variables, working directory,
+/// and root directory. Kept out of [`ProcessRow`] (and so out of every polling-interval
+/// snapshot) because environment variables can carry secrets and this data is only
+/// useful when a user has drilled into one specific process.
+#[derive(Debug, Clone, Serialize)]
+pub struct ProcessDetails {
+    pub pid: u32,
+    pub current_working_directory: Option<String>,
+    pub root_directory: Option<String>,
+    pub environment: Vec<String>,
+}
+
+/// Looks up [`ProcessDetails`] for a single `pid`, or `None` if the process no longer
+/// exists in `system`'s last-refreshed process list.
+pub fn details(system: &System, pid: u32) -> Option<ProcessDetails> {
+    let process = system.process(Pid::from_u32(pid))?;
+    Some(ProcessDetails {
+        pid,
+        current_working_directory: process
+            .cwd()
+            .map(|path| path.to_string_lossy().into_owned()),
+        root_directory: process
+            .root()
+            .map(|path| path.to_string_lossy().into_owned()),
+        environment: process
+            .environ()
+            .iter()
+            .map(|var| var.to_string_lossy().into_owned())
+            .collect(),
+    })
 }

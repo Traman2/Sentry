@@ -57,7 +57,7 @@ function Navbar() {
           <MenubarMenu>
             <MenubarTrigger className="text-navy">View</MenubarTrigger>
             <MenubarContent>
-              {TABS.map(({ type, defaultId, defaultTitle }) => (
+              {TABS.filter((t) => t.showInViewMenu).map(({ type, defaultId, defaultTitle }) => (
                 <MenubarItem
                   key={type}
                   onClick={() =>
