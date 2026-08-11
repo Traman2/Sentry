@@ -52,6 +52,7 @@ body,
   background: transparent;
 }
 
+
 .bg-dot-pattern {
   background-image:
           linear-gradient(rgba(38,38,79,0.08) 1px, transparent 1px),
