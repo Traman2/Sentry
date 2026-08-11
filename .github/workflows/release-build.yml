@@ -63,7 +63,7 @@ jobs:
         run: |
           gh release view "$TAG" || gh release create "$TAG" --draft --title "$TAG"
           gh release upload "$TAG" \
-            crates/sentry-tauri-ui/src-tauri/target/release/bundle/msi/*.msi \
-            crates/sentry-tauri-ui/src-tauri/target/release/bundle/nsis/*.exe \
+            target/release/bundle/msi/*.msi \
+            target/release/bundle/nsis/*.exe \
             --clobber
           gh release edit "$TAG" --draft=false
