@@ -131,7 +131,11 @@ impl TrackingStore {
     }
 
     /// Records where an ended session's archived samples were written.
-    pub fn set_archive_path(&self, id: i64, path: &str) -> rusqlite::Result<Option<TrackedProcess>> {
+    pub fn set_archive_path(
+        &self,
+        id: i64,
+        path: &str,
+    ) -> rusqlite::Result<Option<TrackedProcess>> {
         let conn = self.conn.lock().unwrap_or_else(|e| e.into_inner());
         conn.execute(
             "UPDATE tracked_processes SET archive_path = ?1 WHERE id = ?2",
