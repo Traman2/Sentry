@@ -68,8 +68,7 @@ impl Monitor {
     pub fn snapshot(&mut self) -> SystemSnapshot {
         self.system.refresh_cpu_usage();
         self.system.refresh_memory();
-        self.system
-            .refresh_processes(ProcessesToUpdate::All, true);
+        self.system.refresh_processes(ProcessesToUpdate::All, true);
         self.networks.refresh();
         self.disks.refresh();
 

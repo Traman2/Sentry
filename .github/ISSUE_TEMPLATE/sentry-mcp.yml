@@ -1,0 +1,53 @@
+name: "sentry-mcp"
+description: Bug or improvement in the MCP server exposing system data as tools/resources for an external agent.
+title: "[sentry-mcp] "
+labels: ["sentry-mcp"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for issues in `crates/sentry-mcp` — the MCP (Model Context Protocol) server that exposes `sentry-core` data as tools/resources.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What's wrong, or what should be added/changed?
+    validations:
+      required: true
+  - type: input
+    id: tool
+    attributes:
+      label: Affected tool/resource name
+      description: The specific MCP tool or resource, if applicable.
+    validations:
+      required: false
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Include the request/response (stdio or SSE) if possible.
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: false
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs. actual behavior
+    validations:
+      required: false
+  - type: input
+    id: client
+    attributes:
+      label: MCP client used
+      placeholder: "Python agent, Claude Desktop, custom client, ..."
+    validations:
+      required: false
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Logs, transport (stdio/SSE), related sentry-core behavior.
+    validations:
+      required: false

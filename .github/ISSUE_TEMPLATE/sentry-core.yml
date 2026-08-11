@@ -1,0 +1,46 @@
+name: "sentry-core"
+description: Bug or improvement in the system data collection library (process/disk/network/system shaping over sysinfo).
+title: "[sentry-core] "
+labels: ["sentry-core"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for issues in `crates/sentry-core` — the plain Rust library that wraps `sysinfo` and shapes raw OS data into table-ready rows. No I/O, no server, no UI.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What's wrong, or what should be added/changed?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce / relevant code path
+      description: Which collector (process, disk, network, system) and how to trigger it.
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: false
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs. actual
+    validations:
+      required: false
+  - type: input
+    id: os
+    attributes:
+      label: OS / platform
+      placeholder: "Windows 11, macOS 14, Ubuntu 22.04, ..."
+    validations:
+      required: false
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Logs, sysinfo version, related crates affected.
+    validations:
+      required: false

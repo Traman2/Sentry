@@ -1,0 +1,55 @@
+name: "Python agent"
+description: Bug or improvement in the external MCP client / LLM agent that drives the chat panel and calls sentry-mcp tools.
+title: "[python-agent] "
+labels: ["python-agent"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for the external Python agent (not part of this Cargo workspace) — the MCP client that reasons over `sentry-mcp` tools and drives the desktop app's chat panel.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What's wrong, or what should be added/changed?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - MCP tool calling / reasoning
+        - Chat panel connection (local socket)
+        - Agent setup / configuration
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: false
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs. actual behavior
+    validations:
+      required: false
+  - type: input
+    id: model
+    attributes:
+      label: LLM / model used
+    validations:
+      required: false
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Logs, whether sentry-mcp/sentry-tauri-ui were reachable, etc.
+    validations:
+      required: false
