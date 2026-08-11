@@ -41,6 +41,8 @@ interface ChatStore {
    * — used by "Ask AI" entry points that jump straight into a pre-filled question
    * rather than going through the empty "+ New chat" flow. */
   createChatSpaceWithMessage: (content: string) => Promise<ChatSpaceDetail>;
+  /** Deletes a chat space and removes it from the store. */
+  deleteChatSpace: (chatSpaceId: number) => Promise<void>;
 }
 
 export const useChatStore = create<ChatStore>((set, get) => ({
@@ -81,5 +83,12 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   createChatSpaceWithMessage: async (content) => {
     const space = await get().createChatSpace();
     return get().sendMessage(space.id, content);
+  },
+
+  deleteChatSpace: async (chatSpaceId) => {
+    await invoke<boolean>("delete_chat_space", { id: chatSpaceId });
+    set((state) => ({
+      chatSpaces: state.chatSpaces.filter((c) => c.id !== chatSpaceId),
+    }));
   },
 }));

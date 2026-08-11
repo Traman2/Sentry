@@ -1,5 +1,5 @@
-import { MessageSquare, Plus } from "lucide-react";
-import { useEffect } from "react";
+import { MessageSquare, Plus, Trash2 } from "lucide-react";
+import { useEffect, type MouseEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { useChatStore, type ChatSpace } from "@/store/chat";
 import { useTabStore } from "@/store/tabs";
@@ -16,7 +16,9 @@ function Chatbot() {
   const loaded = useChatStore((state) => state.loaded);
   const refresh = useChatStore((state) => state.refresh);
   const createChatSpace = useChatStore((state) => state.createChatSpace);
+  const deleteChatSpace = useChatStore((state) => state.deleteChatSpace);
   const openTab = useTabStore((state) => state.openTab);
+  const discardTab = useTabStore((state) => state.discardTab);
 
   useEffect(() => {
     if (!loaded) refresh();
@@ -25,6 +27,12 @@ function Chatbot() {
   const handleNewChat = async () => {
     const space = await createChatSpace();
     openChatSpaceTab(openTab, space);
+  };
+
+  const handleDeleteChat = async (e: MouseEvent, space: ChatSpace) => {
+    e.stopPropagation();
+    await deleteChatSpace(space.id);
+    discardTab(String(space.id));
   };
 
   return (
@@ -50,10 +58,18 @@ function Chatbot() {
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") openChatSpaceTab(openTab, space);
             }}
-            className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-navy/80 hover:bg-teal/25"
+            className="group flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-navy/80 hover:bg-teal/25"
           >
             <MessageSquare className="h-3.5 w-3.5 shrink-0 text-navy/40" />
-            <span className="truncate text-xs">{space.title}</span>
+            <span className="flex-1 truncate text-xs">{space.title}</span>
+            <button
+              type="button"
+              aria-label={`Delete chat "${space.title}"`}
+              onClick={(e) => handleDeleteChat(e, space)}
+              className="shrink-0 rounded-md p-1 text-navy/40 opacity-0 hover:bg-teal/40 hover:text-navy group-hover:opacity-100"
+            >
+              <Trash2 className="h-3 w-3" />
+            </button>
           </div>
         ))}
       </div>

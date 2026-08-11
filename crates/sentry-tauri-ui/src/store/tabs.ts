@@ -20,6 +20,10 @@ interface TabStore {
   recent: Tab[];
   openTab: (tab: Tab) => void;
   closeTab: (id: string) => void;
+  /** Closes the tab (if open) and, unlike `closeTab`, also drops it from `recent` —
+   * use this when the underlying resource itself was deleted, so Welcome's "Recent"
+   * panel doesn't keep offering a dead link back to it. */
+  discardTab: (id: string) => void;
   setActiveTab: (id: string) => void;
   renameTab: (id: string, title: string) => void;
 }
@@ -55,6 +59,22 @@ export const useTabStore = create<TabStore>((set) => ({
             : null
           : state.activeTabId;
       return { tabs: remaining, activeTabId };
+    }),
+
+  discardTab: (id) =>
+    set((state) => {
+      const remaining = state.tabs.filter((t) => t.id !== id);
+      const activeTabId =
+        state.activeTabId === id
+          ? remaining.length > 0
+            ? remaining[remaining.length - 1].id
+            : null
+          : state.activeTabId;
+      return {
+        tabs: remaining,
+        activeTabId,
+        recent: state.recent.filter((t) => t.id !== id),
+      };
     }),
 
   setActiveTab: (id) => set({ activeTabId: id }),

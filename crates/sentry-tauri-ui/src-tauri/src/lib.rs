@@ -70,6 +70,11 @@ fn get_chat_space(state: State<ChatState>, id: i64) -> Result<Option<ChatSpaceDe
 }
 
 #[tauri::command]
+fn delete_chat_space(state: State<ChatState>, id: i64) -> Result<bool, String> {
+    state.0.delete_chat_space(id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn send_chat_message(
     state: State<ChatState>,
     chat_space_id: i64,
@@ -144,6 +149,7 @@ pub fn run() {
             create_chat_space,
             list_chat_spaces,
             get_chat_space,
+            delete_chat_space,
             send_chat_message,
             write_and_open_file
         ])

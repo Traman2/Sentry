@@ -62,6 +62,7 @@ function MessageRow({ message }: { message: ChatMessage }) {
 function ChatSpace({ tabId }: { tabId: string }) {
   const chatSpaceId = Number(tabId);
   const [detail, setDetail] = useState<ChatSpaceDetail | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [model, setModel] = useState<ModelId>("qwen");
@@ -100,7 +101,9 @@ function ChatSpace({ tabId }: { tabId: string }) {
   useEffect(() => {
     let cancelled = false;
     invoke<ChatSpaceDetail | null>("get_chat_space", { id: chatSpaceId }).then((next) => {
-      if (!cancelled) setDetail(next);
+      if (cancelled) return;
+      setDetail(next);
+      setNotFound(next === null);
     });
     return () => {
       cancelled = true;
@@ -113,7 +116,7 @@ function ChatSpace({ tabId }: { tabId: string }) {
 
   const handleSend = async () => {
     const content = draft.trim();
-    if (!content || sending) return;
+    if (!content || sending || notFound) return;
     setDraft("");
     setSending(true);
     try {
@@ -134,7 +137,11 @@ function ChatSpace({ tabId }: { tabId: string }) {
       </div>
 
       <div className="flex-1 overflow-y-auto px-4">
-        {!detail || detail.messages.length === 0 ? (
+        {notFound ? (
+          <p className="py-4 text-sm text-muted-foreground">
+            This chat no longer exists. It may have been deleted.
+          </p>
+        ) : !detail || detail.messages.length === 0 ? (
           <p className="py-4 text-sm text-muted-foreground">
             Ask a question about your system.
           </p>
@@ -156,9 +163,12 @@ function ChatSpace({ tabId }: { tabId: string }) {
                 handleSend();
               }
             }}
-            placeholder="Ask about CPU, memory, processes…"
+            placeholder={
+              notFound ? "This chat no longer exists" : "Ask about CPU, memory, processes…"
+            }
             rows={1}
-            className="min-h-5 resize-none bg-transparent py-1 text-sm text-navy outline-none placeholder:text-navy/40"
+            disabled={notFound}
+            className="min-h-5 resize-none bg-transparent py-1 text-sm text-navy outline-none placeholder:text-navy/40 disabled:cursor-not-allowed"
           />
           <div className="flex items-center justify-end gap-1">
             <DropdownMenu>
@@ -181,7 +191,7 @@ function ChatSpace({ tabId }: { tabId: string }) {
               size="icon-sm"
               className="shrink-0 rounded-lg"
               onClick={handleSend}
-              disabled={!draft.trim() || sending}
+              disabled={!draft.trim() || sending || notFound}
             >
               <ArrowUp className="h-4 w-4" />
             </Button>
