@@ -14,6 +14,7 @@ import ViewMoreModal from "../modals/ViewMoreModal";
 import { useChatStore } from "../store/chat";
 import { useModalStore } from "../store/modal";
 import { useTabStore } from "../store/tabs";
+import { useTrackingStore } from "../store/tracking";
 import { PaginationBar } from "./ResourceMonitor/PaginationBar";
 import { ProcessTable } from "./ResourceMonitor/ProcessTable";
 import { SelectionActionBar } from "./ResourceMonitor/SelectionActionBar";
@@ -57,6 +58,7 @@ function ResourceMonitor() {
 
   const openModal = useModalStore((state) => state.openModal);
   const createChatSpaceWithMessage = useChatStore((state) => state.createChatSpaceWithMessage);
+  const startTracking = useTrackingStore((state) => state.startTracking);
   const openTab = useTabStore((state) => state.openTab);
 
   const selectedProcess = useMemo(
@@ -72,8 +74,10 @@ function ResourceMonitor() {
     openModal(<ViewMoreModal row={row} />);
   };
 
-  const handleTrack = (row: AppRow) => {
-    console.log("Track", row);
+  const handleTrack = async (row: AppRow) => {
+    const pids = row.pid_count > 1 ? (row.subRows?.map((sub) => sub.pid) ?? [row.pid]) : [row.pid];
+    const tracked = await startTracking(row.name, pids);
+    openTab({ id: `track-${tracked.id}`, type: "track", title: `Track: ${row.name}` });
   };
 
   const handleAskAi = async (row: AppRow) => {

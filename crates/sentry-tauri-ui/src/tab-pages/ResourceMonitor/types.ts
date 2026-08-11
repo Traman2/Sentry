@@ -202,3 +202,24 @@ export interface ProcessSamplePoint {
   disk_read_bytes_per_sec: number;
   disk_written_bytes_per_sec: number;
 }
+
+/** Mirrors `crates/sentry-core/src/tracking/models.rs::TrackedProcess`. */
+export interface TrackedProcess {
+  id: number;
+  name: string;
+  pids: number[];
+  started_at_ms: number;
+  ended_at_ms: number | null;
+  status: "active" | "ended";
+  archive_path: string | null;
+}
+
+/** Mirrors `crates/sentry-core/src/tracking/models.rs::TrackedArchive`. */
+export interface TrackedArchive {
+  id: number;
+  name: string;
+  pids: number[];
+  started_at_ms: number;
+  ended_at_ms: number;
+  samples: ProcessSamplePoint[];
+}

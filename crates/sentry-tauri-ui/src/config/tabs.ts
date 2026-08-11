@@ -3,9 +3,10 @@ import Welcome from "../tab-pages/Welcome";
 import TestPage from "../tab-pages/TestPage";
 import ResourceMonitor from "../tab-pages/ResourceMonitor";
 import ChatSpace from "../tab-pages/ChatSpace";
+import Track from "../tab-pages/Track";
 
 export interface TabConfig {
-  type: "welcome" | "test" | "resource-monitor" | "chat-space";
+  type: "welcome" | "test" | "resource-monitor" | "chat-space" | "track";
   defaultId: string;
   defaultTitle: string;
   /** Every tab page receives its owning tab's id, so multi-instance tab types
@@ -47,6 +48,13 @@ export const TABS: TabConfig[] = [
     defaultId: "chat-space",
     defaultTitle: "New Chat",
     component: ChatSpace,
+    showInViewMenu: false,
+  },
+  {
+    type: "track",
+    defaultId: "track",
+    defaultTitle: "Track",
+    component: Track,
     showInViewMenu: false,
   },
 ];
