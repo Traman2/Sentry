@@ -84,12 +84,12 @@ impl TrackingStore {
                 "SELECT id, name, pids, started_at_ms, ended_at_ms, status, archive_path
                  FROM tracked_processes
                  WHERE name = ?1
-                 ORDER BY started_at_ms DESC",
+                 ORDER BY started_at_ms DESC, id DESC",
             )?,
             None => conn.prepare(
                 "SELECT id, name, pids, started_at_ms, ended_at_ms, status, archive_path
                  FROM tracked_processes
-                 ORDER BY started_at_ms DESC",
+                 ORDER BY started_at_ms DESC, id DESC",
             )?,
         };
         let rows = match name {

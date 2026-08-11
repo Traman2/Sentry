@@ -71,9 +71,16 @@ CI's job, on a real Windows runner.
    the changed files, and the notes; get explicit go-ahead — pushing the
    tag is what fires the build, and pushing to the tracked branch is a
    shared, visible action.
+   Use a heredoc for the commit message so the trailer lands as a real
+   second paragraph, not a literal `\n`:
    ```
    git add -A
-   git commit -m "chore(release): vX.Y.Z"
+   git commit -m "$(cat <<'EOF'
+   chore(release): vX.Y.Z
+
+   Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+   EOF
+   )"
    git tag vX.Y.Z
    git push
    git push --tags
