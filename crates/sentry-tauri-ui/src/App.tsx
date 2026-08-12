@@ -5,22 +5,25 @@ import Sidebar from "./components/Sidebar";
 import SidePanel from "./components/SidePanel";
 import TabBar from "./components/TabBar";
 import TabContent from "./components/TabContent";
+import { TooltipProvider } from "./components/ui/tooltip";
 
 function App() {
   return (
-    <div className="flex h-screen w-screen flex-col">
-      <Navbar />
-      <div className="relative bg-dot-pattern flex flex-1 w-full overflow-hidden">
-        <Sidebar />
-        <SidePanel />
-        <div className="relative flex flex-1 flex-col overflow-hidden">
-          <AppLogo />
-          <TabBar />
-          <TabContent />
+    <TooltipProvider delay={400}>
+      <div className="flex h-screen w-screen flex-col">
+        <Navbar />
+        <div className="relative bg-dot-pattern flex flex-1 w-full overflow-hidden">
+          <Sidebar />
+          <SidePanel />
+          <div className="relative flex flex-1 flex-col overflow-hidden">
+            <AppLogo />
+            <TabBar />
+            <TabContent />
+          </div>
+          <ModalSocket />
         </div>
-        <ModalSocket />
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
 

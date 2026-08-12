@@ -1,63 +1,25 @@
 import { invoke } from "@tauri-apps/api/core";
-import { ArrowUp, Bot, Check, ChevronDown, Copy, User } from "lucide-react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ArrowDown, TriangleAlert } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useChatStore, type ChatMessage, type ChatSpaceDetail } from "@/store/chat";
+import { MessageGroup } from "@/components/ui/message";
+import { useChatStore, type ChatSpaceDetail } from "@/store/chat";
 import { useTabStore } from "@/store/tabs";
+import { ChatEmptyState, ChatMissingState } from "./ChatSpace/ChatEmptyState";
+import { ChatHeader } from "./ChatSpace/ChatHeader";
+import { Composer } from "./ChatSpace/Composer";
+import {
+  AssistantMessage,
+  MessageListSkeleton,
+  PendingAssistantMessage,
+  UserMessage,
+} from "./ChatSpace/MessageItem";
+import type { ModelId } from "./ChatSpace/constants";
 
-type ModelId = "qwen" | "gpt-oss";
-
-const MODEL_LABELS: Record<ModelId, string> = {
-  qwen: "Qwen",
-  "gpt-oss": "GPT-OSS",
-};
-
-function CopyButton({ content }: { content: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(content);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
-
-  return (
-    <button
-      type="button"
-      onClick={handleCopy}
-      className="mt-2 flex items-center gap-1 text-xs text-navy/50 hover:text-navy"
-    >
-      {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-      {copied ? "Copied" : "Copy"}
-    </button>
-  );
-}
-
-function MessageRow({ message }: { message: ChatMessage }) {
-  const isUser = message.role === "user";
-  return (
-    <div className="flex gap-3 py-4 last:border-b-0">
-      <div
-        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
-          isUser ? "bg-navy text-canvas" : "bg-teal/30 text-navy"
-        }`}
-      >
-        {isUser ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm whitespace-pre-wrap text-navy">{message.content}</p>
-        {!isUser && <CopyButton content={message.content} />}
-      </div>
-    </div>
-  );
-}
+/** How close to the bottom (in px) still counts as "pinned to the bottom" —
+ * below this the transcript stops auto-following new messages and offers a
+ * jump-to-latest button instead. */
+const BOTTOM_THRESHOLD_PX = 32;
 
 function ChatSpace({ tabId }: { tabId: string }) {
   const chatSpaceId = Number(tabId);
@@ -65,38 +27,17 @@ function ChatSpace({ tabId }: { tabId: string }) {
   const [notFound, setNotFound] = useState(false);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [model, setModel] = useState<ModelId>("qwen");
+  // The message being sent, rendered optimistically so the user's own turn
+  // appears the instant they hit send rather than after the round trip.
+  const [pending, setPending] = useState<string | null>(null);
+  const [atBottom, setAtBottom] = useState(true);
+
   const sendMessage = useChatStore((state) => state.sendMessage);
   const renameTab = useTabStore((state) => state.renameTab);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Grows the input pill by one line per newline, up to MAX_VISIBLE_LINES, then
-  // switches to an internal scrollbar — matches Claude's chat input behavior.
-  const resizeTextarea = () => {
-    const el = textareaRef.current;
-    if (!el) return;
-    const MAX_VISIBLE_LINES = 5;
-    const lineHeight = parseFloat(getComputedStyle(el).lineHeight) || 20;
-    const maxHeight = lineHeight * MAX_VISIBLE_LINES;
-
-    el.style.height = "auto";
-    const nextHeight = Math.min(el.scrollHeight, maxHeight);
-    el.style.height = `${nextHeight}px`;
-    el.style.overflowY = el.scrollHeight > maxHeight ? "auto" : "hidden";
-  };
-
-  useLayoutEffect(() => {
-    resizeTextarea();
-  }, [draft]);
-
-  // The custom web font (Geist Variable) can finish loading after the layout
-  // above already ran, which changes line-height and leaves the box sized for
-  // the fallback font's smaller metrics — it looks "tiny" until something else
-  // (like typing) triggers a resize. Recompute once the real font is ready.
-  useEffect(() => {
-    document.fonts?.ready.then(() => resizeTextarea());
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -110,94 +51,144 @@ function ChatSpace({ tabId }: { tabId: string }) {
     };
   }, [chatSpaceId]);
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ block: "end" });
-  }, [detail?.messages.length]);
+  const updateAtBottom = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight < BOTTOM_THRESHOLD_PX);
+  };
 
-  const handleSend = async () => {
-    const content = draft.trim();
+  // Follow the conversation only while the user is already reading the bottom;
+  // a send always wins, since they just asked for the reply.
+  useEffect(() => {
+    if (!atBottom && pending === null) return;
+    bottomRef.current?.scrollIntoView({ block: "end" });
+  }, [detail?.messages.length, pending, atBottom]);
+
+  // Scroll events alone can't keep `atBottom` honest: the transcript also
+  // changes height when the pane resizes or the web font swaps in, and a
+  // reflow that removes the overflow fires no scroll event — leaving a
+  // jump-to-latest button stranded over content that already fits.
+  useEffect(() => {
+    const el = scrollRef.current;
+    const content = el?.firstElementChild;
+    if (!el || !content) return;
+    const observer = new ResizeObserver(() => updateAtBottom());
+    observer.observe(el);
+    observer.observe(content);
+    return () => observer.disconnect();
+  }, []);
+
+  const scrollToBottom = () => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  };
+
+  const handleSend = async (text?: string) => {
+    const content = (text ?? draft).trim();
     if (!content || sending || notFound) return;
     setDraft("");
+    setError(null);
+    setPending(content);
     setSending(true);
     try {
       const updated = await sendMessage(chatSpaceId, content);
       setDetail(updated);
       renameTab(tabId, updated.title);
+    } catch (e) {
+      // Put the text back in the composer — silently swallowing it would lose
+      // whatever the user just typed.
+      setDraft(content);
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setSending(false);
+      setPending(null);
     }
   };
 
+  const messages = detail?.messages ?? [];
+  const isEmpty = detail !== null && messages.length === 0 && pending === null;
+
   return (
     <div className="flex h-full w-full flex-col overflow-hidden rounded-lg border border-teal bg-canvas shadow-sm">
-      <div className="flex shrink-0 items-center border-b border-teal px-4 py-3">
-        <h2 className="truncate text-sm font-semibold text-navy">
-          {detail?.title ?? "New Chat"}
-        </h2>
-      </div>
+      <ChatHeader title={detail?.title ?? "New Chat"} messageCount={messages.length} />
 
-      <div className="flex-1 overflow-y-auto px-4">
-        {notFound ? (
-          <p className="py-4 text-sm text-muted-foreground">
-            This chat no longer exists. It may have been deleted.
-          </p>
-        ) : !detail || detail.messages.length === 0 ? (
-          <p className="py-4 text-sm text-muted-foreground">
-            Ask a question about your system.
-          </p>
-        ) : (
-          detail.messages.map((message) => <MessageRow key={message.id} message={message} />)
-        )}
-        <div ref={bottomRef} />
-      </div>
-
-      <div className="shrink-0 p-3">
-        <div className="flex flex-col gap-1 rounded-3xl border border-teal bg-canvas px-4 py-2">
-          <textarea
-            ref={textareaRef}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-            placeholder={
-              notFound ? "This chat no longer exists" : "Ask about CPU, memory, processes…"
-            }
-            rows={1}
-            disabled={notFound}
-            className="min-h-5 resize-none bg-transparent py-1 text-sm text-navy outline-none placeholder:text-navy/40 disabled:cursor-not-allowed"
-          />
-          <div className="flex items-center justify-end gap-1">
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex cursor-pointer items-center gap-1 rounded-full px-2 py-1 text-xs text-navy/70 hover:bg-teal/25">
-                {MODEL_LABELS[model]}
-                <ChevronDown className="h-3 w-3" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuRadioGroup
-                  value={model}
-                  onValueChange={(value) => setModel(value as ModelId)}
-                >
-                  <DropdownMenuRadioItem value="qwen">Qwen</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="gpt-oss">GPT-OSS</DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <Button
-              size="icon-sm"
-              className="shrink-0 rounded-lg"
-              onClick={handleSend}
-              disabled={!draft.trim() || sending || notFound}
-            >
-              <ArrowUp className="h-4 w-4" />
-            </Button>
+      <div className="relative min-h-0 flex-1">
+        <div
+          ref={scrollRef}
+          onScroll={updateAtBottom}
+          className="h-full overflow-y-auto"
+        >
+          {/* `min-h-full` lets the placeholder states — which are `flex-1` —
+              centre themselves in the pane instead of hugging the top. */}
+          <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col px-6 py-6">
+            {notFound ? (
+              <ChatMissingState />
+            ) : detail === null ? (
+              <MessageListSkeleton />
+            ) : isEmpty ? (
+              <ChatEmptyState onPick={(prompt) => handleSend(prompt)} />
+            ) : (
+              <MessageGroup className="gap-7">
+                {messages.map((message) =>
+                  message.role === "user" ? (
+                    <UserMessage key={message.id} message={message} />
+                  ) : (
+                    <AssistantMessage key={message.id} message={message} />
+                  ),
+                )}
+                {pending !== null && (
+                  <>
+                    <UserMessage
+                      message={{
+                        id: -1,
+                        chat_space_id: chatSpaceId,
+                        role: "user",
+                        content: pending,
+                        created_at_ms: Date.now(),
+                      }}
+                    />
+                    <PendingAssistantMessage />
+                  </>
+                )}
+              </MessageGroup>
+            )}
+            <div ref={bottomRef} />
           </div>
         </div>
+
+        {messages.length > 0 && !atBottom && (
+          <Button
+            variant="outline"
+            size="icon-sm"
+            aria-label="Jump to latest message"
+            onClick={scrollToBottom}
+            className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border-teal/50 shadow-sm hover:bg-teal/25"
+          >
+            <ArrowDown className="size-4" />
+          </Button>
+        )}
       </div>
+
+      {error && (
+        <div className="shrink-0 px-4">
+          <div className="mx-auto flex w-full max-w-3xl items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-[11px] text-destructive">
+            <TriangleAlert className="size-3.5 shrink-0" />
+            <span className="min-w-0 flex-1">Couldn’t send that message. {error}</span>
+          </div>
+        </div>
+      )}
+
+      <Composer
+        draft={draft}
+        onDraftChange={setDraft}
+        onSend={() => handleSend()}
+        model={model}
+        onModelChange={setModel}
+        disabled={notFound}
+        sending={sending}
+        placeholder={
+          notFound ? "This chat no longer exists" : "Ask about CPU, memory, processes…"
+        }
+      />
     </div>
   );
 }
