@@ -96,27 +96,35 @@ function ViewMoreModal({ row }: { row: AppRow }) {
               <div className="mb-1.5 text-xs font-medium uppercase tracking-wide text-navy/60">
                 Processes
               </div>
-              <div className="overflow-hidden rounded-lg border border-teal/50">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-teal/10">
+              {/* No `overflow-hidden` on the wrapper: it would become the
+                  scrollport for the sticky header below and pin it to this box
+                  instead of the modal's scroll region. The header cells round
+                  their own top corners in its place. */}
+              <div className="rounded-lg border border-teal/50">
+                <table className="w-full border-separate border-spacing-0 text-left text-sm">
+                  <thead>
                     <tr>
-                      <th className="border-b border-teal/50 px-3 py-1.5 text-xs font-medium uppercase tracking-wide text-navy/60">
+                      <th className="sticky top-0 z-10 border-b border-teal/50 bg-muted px-3 py-2 text-xs font-medium text-navy/60 first:rounded-tl-lg last:rounded-tr-lg">
                         PID
                       </th>
-                      <th className="border-b border-teal/50 px-3 py-1.5 text-xs font-medium uppercase tracking-wide text-navy/60">
+                      <th className="sticky top-0 z-10 border-b border-teal/50 bg-muted px-3 py-2 text-xs font-medium text-navy/60 first:rounded-tl-lg last:rounded-tr-lg">
                         CPU
                       </th>
-                      <th className="border-b border-teal/50 px-3 py-1.5 text-xs font-medium uppercase tracking-wide text-navy/60">
+                      <th className="sticky top-0 z-10 border-b border-teal/50 bg-muted px-3 py-2 text-xs font-medium text-navy/60 first:rounded-tl-lg last:rounded-tr-lg">
                         Memory
                       </th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="[&_tr:last-child>td]:border-b-0">
                     {row.subRows.map((sub) => (
-                      <tr key={sub.pid} className="border-b border-teal/30 last:border-b-0">
-                        <td className="px-3 py-1.5 text-navy">{sub.pid}</td>
-                        <td className="px-3 py-1.5 text-navy">{sub.cpu_usage_display}</td>
-                        <td className="px-3 py-1.5 text-navy">{sub.memory_display}</td>
+                      <tr key={sub.pid}>
+                        <td className="border-b border-teal/30 px-3 py-1.5 text-navy">{sub.pid}</td>
+                        <td className="border-b border-teal/30 px-3 py-1.5 text-navy">
+                          {sub.cpu_usage_display}
+                        </td>
+                        <td className="border-b border-teal/30 px-3 py-1.5 text-navy">
+                          {sub.memory_display}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

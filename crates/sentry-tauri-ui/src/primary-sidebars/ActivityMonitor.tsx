@@ -1,8 +1,10 @@
-import { ArrowDown, ArrowUp } from "lucide-react";
+import { Activity, ArrowDown, ArrowUp, Cpu, Flame, MemoryStick } from "lucide-react";
 import { useMemo } from "react";
 import type { ReactNode } from "react";
+import { PanelSection } from "@/components/PanelList";
 import { Button } from "@/components/ui/button";
-import Gauge from "@/components/Gauge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { healthColor } from "@/lib/health";
 import { useTabStore, type Tab } from "@/store/tabs";
 import { formatBytes, formatRate } from "@/tab-pages/ResourceMonitor/format";
 import { groupProcessesByApp } from "@/tab-pages/ResourceMonitor/groupProcesses";
@@ -14,13 +16,36 @@ const RESOURCE_MONITOR_TAB: Tab = {
   title: "Resource Monitor",
 };
 
-function Card({ label, children }: { label: string; children: ReactNode }) {
+function StatCard({
+  icon,
+  label,
+  children,
+}: {
+  icon: ReactNode;
+  label: string;
+  children: ReactNode;
+}) {
   return (
-    <div className="rounded-lg border border-teal/50 p-3">
-      <div className="text-[10px] font-semibold uppercase tracking-wide text-navy/60">
-        {label}
-      </div>
-      <div className="mt-2">{children}</div>
+    <Card size="sm" className="rounded-lg ring-teal/50 transition-shadow hover:shadow-sm">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-1.5 text-[10px] font-semibold tracking-wide text-navy/60 uppercase">
+          {icon}
+          {label}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>{children}</CardContent>
+    </Card>
+  );
+}
+
+function UsageBar({ percent }: { percent: number }) {
+  const clamped = Math.min(Math.max(percent, 0), 100);
+  return (
+    <div className="h-1.5 w-full overflow-hidden rounded-full bg-navy/10">
+      <div
+        className="h-full rounded-full transition-[width] duration-500"
+        style={{ width: `${clamped}%`, backgroundColor: healthColor(percent) }}
+      />
     </div>
   );
 }
@@ -50,55 +75,74 @@ function ActivityMonitor() {
     }, [snapshot]);
 
   return (
-    <div className="flex flex-col gap-1">
-      <p className="text-xs text-muted-foreground">View active apps and processes</p>
-      <Button className="rounded-lg" onClick={() => openTab(RESOURCE_MONITOR_TAB)}>
+    <div className="flex flex-col gap-3">
+      <Button size="sm" className="w-full" onClick={() => openTab(RESOURCE_MONITOR_TAB)}>
+        <Activity />
         Open Activity Monitor
       </Button>
 
-      <p className="text-xs text-muted-foreground mt-2">More Details</p>
-      <Card label="System load">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Gauge percent={cpuPercent} size={14} strokeWidth={2.5} />
-            <span className="text-xs text-navy">{cpuPercent.toFixed(1)}% CPU</span>
-          </div>
-        </div>
-        <div className="mt-2 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Gauge percent={memoryPercent} size={14} strokeWidth={2.5} />
-            <span className="text-xs text-navy">{memoryPercent.toFixed(1)}% Memory</span>
-          </div>
-          <span className="text-[11px] text-muted-foreground">
-            {formatBytes(memoryBytes)}
-          </span>
-        </div>
-      </Card>
-
-      <Card label="Network">
-        <div className="flex flex-col gap-1 text-[11px] text-navy">
-          <span className="flex items-center gap-1">
-            <ArrowDown className="h-3 w-3 text-navy/40" />
-            {formatRate(networkDown)}
-          </span>
-          <span className="flex items-center gap-1">
-            <ArrowUp className="h-3 w-3 text-navy/40" />
-            {formatRate(networkUp)}
-          </span>
-        </div>
-      </Card>
-
-      {topConsumer && (
-        <Card label="Top consumer">
-          <div className="truncate text-xs font-medium text-navy">{topConsumer.name}</div>
-          <div className="mt-0.5 flex items-center gap-1.5">
-            <Gauge percent={topConsumer.cpu_usage_percent} />
-            <span className="text-[11px] text-muted-foreground">
-              {topConsumer.cpu_usage_display} CPU · {topConsumer.memory_display}
+      <PanelSection label="Live overview" bodyClassName="gap-1.5">
+        <StatCard icon={<Cpu className="h-3 w-3" />} label="CPU">
+          <div className="flex items-baseline justify-between">
+            <span className="font-heading text-lg font-semibold text-navy tabular-nums">
+              {cpuPercent.toFixed(1)}%
             </span>
           </div>
-        </Card>
-      )}
+          <div className="mt-1.5">
+            <UsageBar percent={cpuPercent} />
+          </div>
+        </StatCard>
+
+        <StatCard icon={<MemoryStick className="h-3 w-3" />} label="Memory">
+          <div className="flex items-baseline justify-between">
+            <span className="font-heading text-lg font-semibold text-navy tabular-nums">
+              {memoryPercent.toFixed(1)}%
+            </span>
+            <span className="text-[11px] text-muted-foreground tabular-nums">
+              {formatBytes(memoryBytes)}
+            </span>
+          </div>
+          <div className="mt-1.5">
+            <UsageBar percent={memoryPercent} />
+          </div>
+        </StatCard>
+
+        <StatCard icon={<Activity className="h-3 w-3" />} label="Network">
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <ArrowDown className="h-3 w-3 text-teal" />
+                Down
+              </span>
+              <span className="text-xs font-medium text-navy tabular-nums">
+                {formatRate(networkDown)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <ArrowUp className="h-3 w-3 text-teal" />
+                Up
+              </span>
+              <span className="text-xs font-medium text-navy tabular-nums">
+                {formatRate(networkUp)}
+              </span>
+            </div>
+          </div>
+        </StatCard>
+
+        {topConsumer && (
+          <StatCard icon={<Flame className="h-3 w-3" />} label="Top consumer">
+            <div className="truncate text-xs font-medium text-navy">{topConsumer.name}</div>
+            <div className="mt-1 flex items-center justify-between text-[11px] text-muted-foreground">
+              <span className="tabular-nums">{topConsumer.cpu_usage_display} CPU</span>
+              <span className="tabular-nums">{topConsumer.memory_display}</span>
+            </div>
+            <div className="mt-1.5">
+              <UsageBar percent={topConsumer.cpu_usage_percent} />
+            </div>
+          </StatCard>
+        )}
+      </PanelSection>
     </div>
   );
 }

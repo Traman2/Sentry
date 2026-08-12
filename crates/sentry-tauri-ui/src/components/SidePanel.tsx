@@ -11,11 +11,11 @@ function SidePanel() {
 
   return (
     <div className="flex h-full w-64 flex-none p-1 pr-0">
-      <div className="flex h-full w-full flex-col overflow-hidden rounded-lg bg-canvas border border-teal shadow-sm">
-        <div className="flex h-9 items-center px-3 text-sm font-semibold text-navy">
+      <div className="flex h-full w-full flex-col overflow-hidden rounded-lg border border-teal bg-canvas shadow-sm">
+        <div className="flex h-9 shrink-0 items-center border-b border-teal/40 px-3 text-sm font-medium text-navy">
           {panel.label}
         </div>
-        <div className="flex-1 overflow-auto p-3">
+        <div className="min-h-0 flex-1 overflow-y-auto p-2.5">
           <PanelContent />
         </div>
       </div>

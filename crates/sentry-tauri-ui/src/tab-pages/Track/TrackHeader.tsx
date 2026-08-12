@@ -1,116 +1,61 @@
-import { Cpu, Download, HardDrive, MemoryStick, Square } from "lucide-react";
-import {
-  Menubar,
-  MenubarContent,
-  MenubarMenu,
-  MenubarRadioGroup,
-  MenubarRadioItem,
-  MenubarSeparator,
-  MenubarTrigger,
-} from "@/components/ui/menubar";
-import { METRIC_LABELS, RANGE_OPTIONS, type MetricView, type RangeKey } from "./constants";
+import { Download, Radar, Square } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
-function MetricIcon({ view, className }: { view: MetricView; className?: string }) {
-  if (view === "cpu") return <Cpu className={className} />;
-  if (view === "memory") return <MemoryStick className={className} />;
-  return <HardDrive className={className} />;
-}
-
-/** The Track page's top bar: process/app identity on the left, and every
- * control (metric view, time range, export, stop) combined into one
- * Menubar on the right — matching the shadcn Menubar the main app Navbar
- * uses for File/Edit/View. */
+/** The Track page's identity bar: which process/app this session follows and
+ * whether it's still live, with the session-level actions (export, stop) on
+ * the right. Metric and range controls live in `MetricToolbar` below it. */
 export function TrackHeader({
   name,
   pids,
-  view,
-  onViewChange,
-  range,
-  onRangeChange,
+  isActive,
   onExport,
   exportDisabled,
-  showStop,
   onStop,
 }: {
   name: string;
   pids: number[];
-  view: MetricView;
-  onViewChange: (view: MetricView) => void;
-  range: RangeKey;
-  onRangeChange: (range: RangeKey) => void;
+  isActive: boolean;
   onExport: () => void;
   exportDisabled: boolean;
-  showStop: boolean;
   onStop: () => void;
 }) {
   return (
-    <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-teal px-4 py-3">
-      <div className="flex items-center gap-2">
-        <h2 className="text-sm font-semibold text-navy">{name}</h2>
-        <span className="text-xs text-muted-foreground">
-          {pids.length > 1 ? `${pids.length} processes` : `PID ${pids[0]}`}
-        </span>
+    <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-teal px-4 py-3">
+      <div className="flex min-w-0 items-center gap-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-teal/40 font-heading text-sm font-semibold text-navy">
+          {name.slice(0, 1).toUpperCase()}
+        </div>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <h2 className="truncate font-heading text-sm font-semibold text-navy">{name}</h2>
+            {isActive ? (
+              <Badge variant="secondary">
+                <Radar className="animate-pulse" />
+                Live
+              </Badge>
+            ) : (
+              <Badge variant="outline">Ended</Badge>
+            )}
+          </div>
+          <p className="truncate text-[11px] text-muted-foreground">
+            {pids.length > 1 ? `${pids.length} processes` : `PID ${pids[0]}`}
+          </p>
+        </div>
       </div>
 
-      <Menubar className="border-teal bg-background">
-        <MenubarMenu>
-          <MenubarTrigger className="gap-1.5 text-navy">
-            <MetricIcon view={view} className="h-3.5 w-3.5" />
-            {METRIC_LABELS[view]}
-          </MenubarTrigger>
-          <MenubarContent align="start">
-            <MenubarRadioGroup value={view} onValueChange={(value) => onViewChange(value as MetricView)}>
-              <MenubarRadioItem value="cpu">
-                <Cpu className="h-3.5 w-3.5" />
-                CPU
-              </MenubarRadioItem>
-              <MenubarRadioItem value="memory">
-                <MemoryStick className="h-3.5 w-3.5" />
-                Memory
-              </MenubarRadioItem>
-              <MenubarRadioItem value="storage">
-                <HardDrive className="h-3.5 w-3.5" />
-                Storage
-              </MenubarRadioItem>
-            </MenubarRadioGroup>
-          </MenubarContent>
-        </MenubarMenu>
-
-        <MenubarMenu>
-          <MenubarTrigger className="gap-1.5 text-navy">{RANGE_OPTIONS[range].label}</MenubarTrigger>
-          <MenubarContent align="start">
-            <MenubarRadioGroup value={range} onValueChange={(value) => onRangeChange(value as RangeKey)}>
-              {(Object.keys(RANGE_OPTIONS) as RangeKey[]).map((key) => (
-                <MenubarRadioItem key={key} value={key}>
-                  {RANGE_OPTIONS[key].label}
-                </MenubarRadioItem>
-              ))}
-            </MenubarRadioGroup>
-          </MenubarContent>
-        </MenubarMenu>
-
-        <MenubarSeparator className="mx-0.5 h-4 w-px" />
-
-        <button
-          type="button"
-          onClick={onExport}
-          disabled={exportDisabled}
-          className="flex items-center gap-1.5 rounded-sm px-1.5 py-0.5 text-sm font-medium text-navy outline-hidden select-none hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
-        >
-          <Download className="h-3.5 w-3.5" />
+      <div className="flex items-center gap-2">
+        <Button variant="outline" size="sm" onClick={onExport} disabled={exportDisabled}>
+          <Download />
           Export CSV
-        </button>
-        {showStop && (
-          <button
-            type="button"
-            onClick={onStop}
-            className="flex items-center gap-1.5 rounded-sm px-1.5 py-0.5 text-sm font-medium text-destructive outline-hidden select-none hover:bg-destructive/10"
-          >
-            <Square className="h-3.5 w-3.5" />
+        </Button>
+        {isActive && (
+          <Button variant="destructive" size="sm" onClick={onStop}>
+            <Square />
             Stop tracking
-          </button>
+          </Button>
         )}
-      </Menubar>
+      </div>
     </div>
   );
 }

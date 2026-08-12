@@ -1,50 +1,75 @@
 import type { Table } from "@tanstack/react-table";
 import type { ReactNode } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import type { ProcessSamplePoint } from "../ResourceMonitor/types";
 import { DataTable } from "./DataTable";
 import { PaginationBar } from "./PaginationBar";
+import { StatCards, type StatSpec } from "./StatCards";
 
-/** A chart card plus its underlying "Process data" table — one per metric
- * view, so switching CPU/Memory/Storage swaps this whole block. */
+/** Everything shown for one metric view: the summary figures, the chart, and
+ * the sample history beneath it. Switching CPU/Memory/Storage swaps this whole
+ * block.
+ *
+ * Both cards run `gap-0 py-0` and pad their own sections instead: `Card`'s
+ * default `gap-(--card-spacing)` would otherwise open a second 16px gap under
+ * the header rule, on top of the padding the header already carries, and the
+ * table's column headers would float away from the panel edge.
+ *
+ * The table card takes the leftover height and scrolls internally rather than
+ * running off the bottom of the page, which is what keeps its sticky header and
+ * its pagination on screen no matter how many rows there are. */
 export function MetricSection({
   title,
+  stats,
   legend,
   chart,
   table,
   rowCount,
 }: {
   title: string;
-  /** Extra content in the card header, e.g. storage's Read/Write color key. */
+  stats: StatSpec[];
+  /** Extra content in the chart card's header, e.g. storage's Read/Write key. */
   legend?: ReactNode;
   chart: ReactNode;
   table: Table<ProcessSamplePoint>;
   rowCount: number;
 }) {
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle className={legend ? "flex items-center justify-between" : undefined}>
-            {title}
-            {legend}
-          </CardTitle>
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
+      <StatCards stats={stats} />
+
+      <Card className="shrink-0 gap-0 rounded-lg py-0 ring-teal/50">
+        <CardHeader className="border-b pt-4">
+          <CardTitle className="text-sm">{title}</CardTitle>
+          {legend && <CardAction>{legend}</CardAction>}
         </CardHeader>
-        <CardContent>{chart}</CardContent>
+        <CardContent className="p-4">{chart}</CardContent>
       </Card>
 
-      <div>
-        <h3 className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-navy/60">
-          Process data
-        </h3>
-        <DataTable table={table} />
-        <PaginationBar table={table} totalCount={rowCount} />
-      </div>
-    </>
+      <Card className="min-h-96 flex-1 gap-0 rounded-lg py-0 ring-teal/50">
+        <CardHeader className="shrink-0 border-b pt-4">
+          <CardTitle className="text-sm">Process data</CardTitle>
+        </CardHeader>
+        <CardContent className="min-h-0 flex-1 p-0">
+          <DataTable table={table} />
+        </CardContent>
+        <CardFooter className="shrink-0 px-4 py-2.5">
+          <PaginationBar table={table} totalCount={rowCount} />
+        </CardFooter>
+      </Card>
+      <div className="border-4 border-transparent"/>
+    </div>
   );
 }
 
-/** Small color-key legend for a card header, e.g. "● Read  ● Write". */
+/** Small color key for a chart card header, e.g. "● Read  ● Write". */
 export function LegendDots({ items }: { items: { label: string; color: string }[] }) {
   return (
     <span className="flex items-center gap-3 text-xs font-normal text-muted-foreground">

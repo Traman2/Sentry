@@ -1,5 +1,11 @@
+import { useId } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
 import { formatTick } from "./format";
 
 export interface ChartSeriesSpec {
@@ -27,12 +33,30 @@ export function MetricChart({
   valueFormatter: (value: number) => string;
   yAxisWidth?: number;
 }) {
+  // Gradient ids have to be unique per mounted chart, or two charts on screen
+  // would share (and fight over) the same <defs> entry.
+  const gradientId = useId().replace(/:/g, "");
   const labelByKey = Object.fromEntries(series.map((s) => [s.dataKey, s.label]));
 
   return (
     <ChartContainer config={config} className="aspect-auto h-64 w-full">
-      <AreaChart data={data}>
-        <CartesianGrid vertical={false} />
+      <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+        <defs>
+          {series.map((s) => (
+            <linearGradient
+              key={s.dataKey}
+              id={`${gradientId}-${s.dataKey}`}
+              x1="0"
+              y1="0"
+              x2="0"
+              y2="1"
+            >
+              <stop offset="5%" stopColor={s.color} stopOpacity={0.3} />
+              <stop offset="95%" stopColor={s.color} stopOpacity={0.02} />
+            </linearGradient>
+          ))}
+        </defs>
+        <CartesianGrid vertical={false} strokeDasharray="3 3" />
         <XAxis
           dataKey="timestamp_ms"
           type="number"
@@ -41,6 +65,9 @@ export function MetricChart({
           tickFormatter={formatTick}
           tickLine={false}
           axisLine={false}
+          tickMargin={8}
+          minTickGap={28}
+          tick={{ fontSize: 11 }}
         />
         <YAxis
           domain={[0, "auto"]}
@@ -48,6 +75,8 @@ export function MetricChart({
           tickLine={false}
           axisLine={false}
           width={yAxisWidth}
+          tickMargin={4}
+          tick={{ fontSize: 11 }}
         />
         <ChartTooltip
           content={
@@ -72,9 +101,9 @@ export function MetricChart({
             dataKey={s.dataKey}
             type="monotone"
             stroke={s.color}
-            fill={s.color}
-            fillOpacity={series.length > 1 ? 0.1 : 0.15}
-            strokeWidth={1.5}
+            fill={`url(#${gradientId}-${s.dataKey})`}
+            strokeWidth={2}
+            activeDot={{ r: 3, strokeWidth: 0 }}
             connectNulls
             isAnimationActive={false}
           />
