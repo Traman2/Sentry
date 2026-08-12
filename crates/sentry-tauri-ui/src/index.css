@@ -4,6 +4,17 @@
 @import "@fontsource-variable/geist";
 
 /*
+ * Sentry ships a single light theme — there is no `.dark` token block below.
+ * Tailwind v4 otherwise resolves `dark:` to `prefers-color-scheme: dark`, so on
+ * a machine set to dark mode every `dark:` utility baked into the shadcn
+ * primitives (`dark:bg-input/30` on the chat composer, and friends) would fire
+ * against light-only tokens and tint controls at random. Binding the variant to
+ * a `.dark` class that nothing sets keeps those rules inert until the app
+ * actually grows a dark theme.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
  * All UI color customization lives here. The four brand colors below
  * (canvas/mint/teal/navy) drive the whole app; the semantic tokens further
  * down (--popover, --accent, --border, --ring, etc.) are what shadcn's
