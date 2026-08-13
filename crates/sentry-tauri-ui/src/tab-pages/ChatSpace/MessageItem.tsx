@@ -1,4 +1,4 @@
-import { Check, Copy, Sparkles } from "lucide-react";
+import { Check, Copy, Timer } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Button } from "@/components/ui/button";
@@ -6,27 +6,12 @@ import {
   Message,
   MessageContent,
   MessageFooter,
-  MessageHeader,
 } from "@/components/ui/message";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { ChatMessage } from "@/store/chat";
-import { formatMessageTime } from "./time";
-
-/** The small "who is talking" row above an assistant reply. User turns don't
- * get one — their bubble already sets them apart, and both roles are
- * left-aligned so a label on every turn would just add noise. */
-function AssistantIdentity() {
-  return (
-    <MessageHeader className="gap-1.5 px-0">
-      <span className="flex size-5 shrink-0 items-center justify-center rounded-md border border-teal/40 bg-teal/10">
-        <Sparkles className="size-3 text-navy/70" />
-      </span>
-      <span className="text-[11px] font-medium text-navy/60">Sentry</span>
-    </MessageHeader>
-  );
-}
+import { formatMessageTime, formatThinkingDuration, mockThinkingDurationMs } from "./time";
 
 function CopyAction({ content }: { content: string }) {
   const [copied, setCopied] = useState(false);
@@ -57,6 +42,25 @@ function CopyAction({ content }: { content: string }) {
   );
 }
 
+/** How long the agent spent on this reply. Sits in the hover footer beside the
+ * copy button and borrows its metrics, so the two read as one row of muted
+ * afterthoughts rather than a control next to a label. */
+function ThinkingTime({ durationMs }: { durationMs: number }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <span className="inline-flex h-6 items-center gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs text-navy/50 tabular-nums" />
+        }
+      >
+        <Timer className="size-3" />
+        {formatThinkingDuration(durationMs)}
+      </TooltipTrigger>
+      <TooltipContent>Agent took {formatThinkingDuration(durationMs)} to respond</TooltipContent>
+    </Tooltip>
+  );
+}
+
 /** A user turn: left-aligned like everything else, but wrapped in a tinted
  * bubble so a question is instantly distinguishable from the long-form answer
  * that follows it. */
@@ -64,7 +68,7 @@ export function UserMessage({ message }: { message: ChatMessage }) {
   return (
     <Message align="start">
       <MessageContent>
-        <Bubble variant="muted">
+        <Bubble variant="outline">
           <BubbleContent className="rounded-2xl border-teal/25 px-3.5 py-2.5 whitespace-pre-wrap text-navy">
             {message.content}
           </BubbleContent>
@@ -86,13 +90,13 @@ export function AssistantMessage({
 }) {
   return (
     <Message align="start" className="flex-col gap-2">
-      <AssistantIdentity />
       <MessageContent className="gap-3 text-sm leading-relaxed text-navy">
         <div className="whitespace-pre-wrap wrap-break-word">{message.content}</div>
         {children}
       </MessageContent>
-      <MessageFooter className="gap-1 px-0 opacity-0 transition-opacity focus-within:opacity-100 group-hover/message:opacity-100">
+      <MessageFooter className="gap-1 px-0 opacity-0 transition-opacity group-hover/message:opacity-100">
         <CopyAction content={message.content} />
+        <ThinkingTime durationMs={mockThinkingDurationMs(message.id)} />
         <span className="text-[11px] text-navy/40 tabular-nums">
           {formatMessageTime(message.created_at_ms)}
         </span>
@@ -122,7 +126,6 @@ export function MessageListSkeleton() {
 export function PendingAssistantMessage() {
   return (
     <Message align="start" className="flex-col gap-2">
-      <AssistantIdentity />
       <MessageContent className="gap-2.5">
         <span className="flex items-center gap-2 text-sm text-muted-foreground">
           <Spinner className="size-3.5" />

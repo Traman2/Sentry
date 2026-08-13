@@ -7,3 +7,21 @@ export function formatMessageTime(timestampMs: number): string {
     minute: "2-digit",
   });
 }
+
+/** How long the agent worked on a reply, e.g. "4.2s", "18s", "1m 07s". Sub-ten
+ * seconds keeps a decimal because that's the range where the difference between
+ * a cached answer and a real one is visible. */
+export function formatThinkingDuration(durationMs: number): string {
+  const seconds = durationMs / 1000;
+  if (seconds < 10) return `${seconds.toFixed(1)}s`;
+  if (seconds < 60) return `${Math.round(seconds)}s`;
+  const minutes = Math.floor(seconds / 60);
+  return `${minutes}m ${String(Math.round(seconds % 60)).padStart(2, "0")}s`;
+}
+
+/** TODO: replace with a real duration once the backend records how long the
+ * agent spent on a turn. Derived from the message id so a given reply keeps the
+ * same number across re-renders instead of flickering. */
+export function mockThinkingDurationMs(messageId: number): number {
+  return 2400 + ((messageId * 1373) % 26000);
+}

@@ -1,4 +1,4 @@
-import { MessageSquareOff, Sparkles } from "lucide-react";
+import { MessageSquareOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -18,9 +18,9 @@ export function ChatEmptyState({ onPick }: { onPick: (prompt: string) => void })
       <EmptyHeader>
         <EmptyMedia
           variant="icon"
-          className="size-10 rounded-xl bg-teal/15 text-navy"
+          className="size-10 rounded-xl bg-white text-navy"
         >
-          <Sparkles className="size-5" />
+          <img className="size-8" src="/sentry-logo.svg" alt="app logo"/>
         </EmptyMedia>
         <EmptyTitle className="text-lg">Ask about your system</EmptyTitle>
         <EmptyDescription>

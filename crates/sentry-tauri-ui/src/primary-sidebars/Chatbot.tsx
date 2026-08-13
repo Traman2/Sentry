@@ -41,7 +41,7 @@ function Chatbot() {
 
   return (
     <div className="flex flex-col gap-3">
-      <Button size="sm" className="w-full" onClick={handleNewChat}>
+      <Button size="sm" className="w-full py-4" onClick={handleNewChat}>
         <Plus />
         New chat
       </Button>

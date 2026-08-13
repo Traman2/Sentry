@@ -76,7 +76,7 @@ function ActivityMonitor() {
 
   return (
     <div className="flex flex-col gap-3">
-      <Button size="sm" className="w-full" onClick={() => openTab(RESOURCE_MONITOR_TAB)}>
+      <Button size="sm" className="w-full py-4" onClick={() => openTab(RESOURCE_MONITOR_TAB)}>
         <Activity />
         Open Activity Monitor
       </Button>
