@@ -1,6 +1,6 @@
 # Sentry — Keeping Tabs
 
-![Sentry Resource Monitor](README_Banner.png)
+![Sentry Resource Monitor](README_IMAGES/README_Banner.png)
 
 Sentry is a desktop system monitor. It shows running processes, CPU, memory,
 disk, and network activity in a native window, and it is built so that an AI
