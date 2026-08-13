@@ -20,13 +20,15 @@ pub mod network;
 pub mod process;
 mod stream;
 pub mod system;
+#[cfg(test)]
+mod tests;
 pub mod units;
 pub mod users;
 
 pub use components::ComponentMetrics;
 pub use disk::DiskMetrics;
 pub use network::NetworkInterfaceMetrics;
-pub use process::{ProcessDetails, ProcessRow};
+pub use process::{KillOutcome, ProcessDetails, ProcessRow};
 pub use stream::{spawn_stream, stream_json};
 pub use system::SystemSummary;
 pub use users::UserAccount;
@@ -35,8 +37,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::Serialize;
 use sysinfo::{
-    Components, Disks, Networks, Pid, ProcessRefreshKind, ProcessesToUpdate, System, UpdateKind,
-    Users,
+    Components, Disks, Networks, Pid, ProcessRefreshKind, ProcessesToUpdate, Signal, System,
+    UpdateKind, Users,
 };
 
 /// A single point-in-time capture of the whole machine: system summary, every
@@ -122,6 +124,56 @@ impl Monitor {
                 .with_environ(UpdateKind::Always),
         );
         process::details(&self.system, pid)
+    }
+
+    /// Terminates `pid`, refreshing that one process first so the decision is never made
+    /// from a stale table.
+    ///
+    /// The refresh is the point of this method. [`Monitor`] keeps a process list that can
+    /// be seconds old, and operating systems recycle pids — acting on a stale entry can
+    /// terminate a process that merely inherited the number from the one the caller meant.
+    /// Refreshing collapses that window; `expect_name` closes what's left of it: when
+    /// supplied, the refreshed process's name must match or nothing is killed and the
+    /// mismatch is reported. Callers that know what they think they're killing (a UI row,
+    /// an agent that just listed processes) should always pass it.
+    ///
+    /// `signal` defaults to [`Signal::Kill`]. Note that [`Signal::Kill`] is the only signal
+    /// `sysinfo` supports on every platform; anything else may come back as
+    /// `delivered: false` with a "not supported" message.
+    pub fn kill_process(
+        &mut self,
+        pid: u32,
+        expect_name: Option<&str>,
+        signal: Option<Signal>,
+    ) -> process::KillOutcome {
+        let sysinfo_pid = Pid::from_u32(pid);
+        self.system
+            .refresh_processes(ProcessesToUpdate::Some(&[sysinfo_pid]), true);
+
+        if let Some(expected) = expect_name {
+            let actual = self
+                .system
+                .process(sysinfo_pid)
+                .map(|p| p.name().to_string_lossy().into_owned());
+            match actual {
+                Some(actual) if actual != expected => {
+                    return process::KillOutcome {
+                        pid,
+                        name: Some(actual.clone()),
+                        found: true,
+                        signal: format!("{:?}", signal.unwrap_or(Signal::Kill)),
+                        delivered: false,
+                        message: format!(
+                            "refused: pid {pid} is now {actual}, not {expected} — the pid was \
+                             likely recycled"
+                        ),
+                    };
+                }
+                _ => {}
+            }
+        }
+
+        process::kill(&self.system, pid, signal)
     }
 }
 

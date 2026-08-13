@@ -1,3 +1,5 @@
+import { invoke } from "@tauri-apps/api/core";
+import { confirm, message } from "@tauri-apps/plugin-dialog";
 import { useMemo, useState } from "react";
 import {
   type ExpandedState,
@@ -21,7 +23,7 @@ import { SelectionActionBar } from "./ResourceMonitor/SelectionActionBar";
 import { Toolbar } from "./ResourceMonitor/Toolbar";
 import { processColumns } from "./ResourceMonitor/columns";
 import { findAppRowByPid, groupProcessesByApp } from "./ResourceMonitor/groupProcesses";
-import type { AppRow } from "./ResourceMonitor/types";
+import type { AppRow, KillOutcome } from "./ResourceMonitor/types";
 import { useSystemSnapshot } from "./ResourceMonitor/useSystemSnapshot";
 
 function ResourceMonitor() {
@@ -85,8 +87,37 @@ function ResourceMonitor() {
     openTab({ id: String(detail.id), type: "chat-space", title: detail.title });
   };
 
-  const handleKill = (row: AppRow) => {
-    console.log("Kill", row);
+  const handleKill = async (row: AppRow) => {
+    // A row can aggregate several PIDs under one app name (Chrome's tab processes, say), so
+    // terminating it means terminating all of them — same expansion `handleTrack` does.
+    const pids = row.pid_count > 1 ? (row.subRows?.map((sub) => sub.pid) ?? [row.pid]) : [row.pid];
+    const target = row.pid_count > 1 ? `${row.name} (${pids.length} processes)` : `${row.name} (PID ${row.pid})`;
+
+    const confirmed = await confirm(
+      `Terminate ${target}?\n\nUnsaved work in this application will be lost. This cannot be undone.`,
+      { title: "Terminate process", kind: "warning", okLabel: "Terminate" },
+    );
+    if (!confirmed) return;
+
+    // `expect_name` guards against the PID having been recycled between the last table
+    // refresh and this click — the backend refuses rather than killing a different process.
+    const outcomes = await Promise.all(
+      pids.map((pid) =>
+        invoke<KillOutcome>("kill_process", { pid, expectName: row.name }),
+      ),
+    );
+
+    const failed = outcomes.filter((outcome) => !outcome.delivered);
+    if (failed.length > 0) {
+      await message(failed.map((outcome) => outcome.message).join("\n"), {
+        title: "Could not terminate",
+        kind: "error",
+      });
+    }
+
+    // The row is gone (or about to be, on the next 2s poll) — drop the selection so the
+    // action bar doesn't linger over a process that no longer exists.
+    setSelectedPid(null);
   };
 
   return (

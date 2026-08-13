@@ -31,7 +31,9 @@ CI's job, on a real Windows runner.
    to get the *net* set of changed files, then read those files as they
    stand now (not the diff hunks) to understand what the app can actually
    do today that it couldn't before. Group findings by area: `sentry-core`,
-   `sentry-tauri-ui`, `sentry-mcp` (skip a group with nothing in it). Ignore
+   `sentry-tauri-ui`, `sentry-mcp` (the in-process MCP server, which lives at
+   `crates/sentry-tauri-ui/src-tauri/src/mcp/`), `python-agent` (skip a group
+   with nothing in it). Ignore
    pure formatting/lint-only diffs — they're not release-note-worthy.
 
 3. **Decide the version, then confirm it with the user.** Use judgment from
@@ -50,8 +52,8 @@ CI's job, on a real Windows runner.
    it.
 
 5. **Bump every version file.** From the repo root:
-   - `cargo set-version --workspace <version>` — covers the 3 Rust crates
-     (`sentry-core`, `sentry-mcp`, `sentry-tauri-ui/src-tauri`) in one shot.
+   - `cargo set-version --workspace <version>` — covers the 2 Rust crates
+     (`sentry-core`, `sentry-tauri-ui/src-tauri`) in one shot.
      If this errors with "no such command", tell the user once to run
      `cargo install cargo-edit`, then retry — don't silently hand-edit the
      Cargo.tomls with sed/regex instead.

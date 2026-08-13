@@ -1,8 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { ArrowDown, TriangleAlert } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MessageGroup } from "@/components/ui/message";
+import { useAgentStore } from "@/store/agent";
 import { useChatStore, type ChatSpaceDetail } from "@/store/chat";
 import { useTabStore } from "@/store/tabs";
 import { ChatEmptyState, ChatMissingState } from "./ChatSpace/ChatEmptyState";
@@ -10,11 +12,12 @@ import { ChatHeader } from "./ChatSpace/ChatHeader";
 import { Composer } from "./ChatSpace/Composer";
 import {
   AssistantMessage,
+  ErrorMessage,
+  InterruptedMessage,
   MessageListSkeleton,
   PendingAssistantMessage,
   UserMessage,
 } from "./ChatSpace/MessageItem";
-import type { ModelId } from "./ChatSpace/constants";
 
 /** How close to the bottom (in px) still counts as "pinned to the bottom" —
  * below this the transcript stops auto-following new messages and offers a
@@ -28,28 +31,70 @@ function ChatSpace({ tabId }: { tabId: string }) {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [model, setModel] = useState<ModelId>("qwen");
   // The message being sent, rendered optimistically so the user's own turn
   // appears the instant they hit send rather than after the round trip.
   const [pending, setPending] = useState<string | null>(null);
   const [atBottom, setAtBottom] = useState(true);
+  /** Live progress from the agent for the turn in flight. */
+  const [steps, setSteps] = useState<string[]>([]);
 
   const sendMessage = useChatStore((state) => state.sendMessage);
+  const model = useAgentStore((state) => state.model);
+  const setModel = useAgentStore((state) => state.setModel);
+  const agentStatus = useAgentStore((state) => state.status);
   const renameTab = useTabStore((state) => state.renameTab);
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  const refresh = useCallback(async () => {
+    const next = await invoke<ChatSpaceDetail | null>("get_chat_space", { id: chatSpaceId });
+    setDetail(next);
+    setNotFound(next === null);
+    return next;
+  }, [chatSpaceId]);
+
   useEffect(() => {
-    let cancelled = false;
-    invoke<ChatSpaceDetail | null>("get_chat_space", { id: chatSpaceId }).then((next) => {
-      if (cancelled) return;
-      setDetail(next);
-      setNotFound(next === null);
+    void refresh();
+  }, [refresh]);
+
+  const messages = detail?.messages ?? [];
+  // `send_chat_message` records only the user's turn — the agent writes the reply
+  // separately — so a transcript ending on a user message is one still being answered.
+  // Deriving this rather than holding a flag means it survives a tab switch or remount.
+  const awaitingReply = messages.length > 0 && messages[messages.length - 1].role === "user";
+
+  // The agent posts its reply straight into the database from another process, so the
+  // backend emits an event when that happens rather than the UI guessing.
+  useEffect(() => {
+    const unlisten = listen<number>("mcp://chat-updated", (event) => {
+      if (event.payload === chatSpaceId) void refresh();
     });
     return () => {
-      cancelled = true;
+      void unlisten.then((off) => off());
+    };
+  }, [chatSpaceId, refresh]);
+
+  // Progress from the agent as it works. These are never persisted — they exist only for
+  // the wait, and the arrival of a real message is what retires them (see below).
+  useEffect(() => {
+    const unlisten = listen<{ chat_space_id: number; step: string }>(
+      "mcp://thinking",
+      (event) => {
+        if (event.payload.chat_space_id !== chatSpaceId) return;
+        setSteps((current) => [...current, event.payload.step]);
+      },
+    );
+    return () => {
+      void unlisten.then((off) => off());
     };
   }, [chatSpaceId]);
+
+  // Clearing on message count rather than in the send/stop handlers means every way a turn
+  // can end — a reply, an error, an interrupt — retires the steps through one path.
+  useEffect(() => {
+    setSteps([]);
+  }, [messages.length]);
+
 
   const updateAtBottom = () => {
     const el = scrollRef.current;
@@ -62,7 +107,7 @@ function ChatSpace({ tabId }: { tabId: string }) {
   useEffect(() => {
     if (!atBottom && pending === null) return;
     bottomRef.current?.scrollIntoView({ block: "end" });
-  }, [detail?.messages.length, pending, atBottom]);
+  }, [messages.length, pending, atBottom]);
 
   // Scroll events alone can't keep `atBottom` honest: the transcript also
   // changes height when the pane resizes or the web font swaps in, and a
@@ -104,8 +149,20 @@ function ChatSpace({ tabId }: { tabId: string }) {
     }
   };
 
-  const messages = detail?.messages ?? [];
   const isEmpty = detail !== null && messages.length === 0 && pending === null;
+  const showPendingReply = pending !== null || awaitingReply;
+
+  const handleStop = async () => {
+    // The backend closes the turn out in the transcript and tells the agent to drop it, so
+    // this unblocks even when the agent is the thing that's wedged.
+    const updated = await invoke<ChatSpaceDetail | null>("interrupt_chat", {
+      chatSpaceId: chatSpaceId,
+    });
+    // `null` means a reply landed first and the interrupt was a no-op — refresh to pick it
+    // up rather than leaving the transcript a beat behind.
+    if (updated) setDetail(updated);
+    else void refresh();
+  };
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden rounded-lg border border-teal bg-canvas shadow-sm">
@@ -128,26 +185,34 @@ function ChatSpace({ tabId }: { tabId: string }) {
               <ChatEmptyState onPick={(prompt) => handleSend(prompt)} />
             ) : (
               <MessageGroup className="gap-7">
-                {messages.map((message) =>
-                  message.role === "user" ? (
-                    <UserMessage key={message.id} message={message} />
-                  ) : (
-                    <AssistantMessage key={message.id} message={message} />
-                  ),
-                )}
+                {messages.map((message) => {
+                  if (message.role === "user")
+                    return <UserMessage key={message.id} message={message} />;
+                  if (message.role === "error")
+                    return <ErrorMessage key={message.id} message={message} />;
+                  if (message.role === "interrupted")
+                    return <InterruptedMessage key={message.id} message={message} />;
+                  return <AssistantMessage key={message.id} message={message} />;
+                })}
                 {pending !== null && (
-                  <>
-                    <UserMessage
-                      message={{
-                        id: -1,
-                        chat_space_id: chatSpaceId,
-                        role: "user",
-                        content: pending,
-                        created_at_ms: Date.now(),
-                      }}
-                    />
-                    <PendingAssistantMessage />
-                  </>
+                  <UserMessage
+                    message={{
+                      id: -1,
+                      chat_space_id: chatSpaceId,
+                      role: "user",
+                      content: pending,
+                      details: null,
+                      created_at_ms: Date.now(),
+                    }}
+                  />
+                )}
+                {showPendingReply && (
+                  <PendingAssistantMessage
+                    agentDown={agentStatus !== null && !agentStatus.running}
+                    detail={agentStatus?.detail}
+                    onStop={awaitingReply ? handleStop : undefined}
+                    steps={steps}
+                  />
                 )}
               </MessageGroup>
             )}

@@ -9,7 +9,7 @@ pub use history::{
     spawn_recorder,
 };
 pub use monitor::{
-    ComponentMetrics, DiskMetrics, Monitor, NetworkInterfaceMetrics, ProcessDetails, ProcessRow,
-    SystemSnapshot, SystemSummary, UserAccount,
+    ComponentMetrics, DiskMetrics, KillOutcome, Monitor, NetworkInterfaceMetrics, ProcessDetails,
+    ProcessRow, SystemSnapshot, SystemSummary, UserAccount,
 };
 pub use tracking::{TrackedArchive, TrackedProcess, TrackingStore};

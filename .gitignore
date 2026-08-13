@@ -1,7 +1,7 @@
 # Rust
 /target/
 **/target/
-# Cargo.lock is committed since this workspace produces binaries (sentry-mcp, sentry-tauri-ui)
+# Cargo.lock is committed since this workspace produces a binary (sentry-tauri-ui)
 
 # Tauri / frontend
 crates/sentry-tauri-ui/node_modules/
@@ -13,6 +13,12 @@ agent/__pycache__/
 agent/**/__pycache__/
 agent/*.egg-info/
 
+# Secrets — the agent reads its API key from the environment
+.env
+*.env
+!.env.example
+
 # Editor / OS
 .vscode/
 .DS_Store
+.env

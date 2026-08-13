@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import AppLogo from "./components/AppLogo";
 import ModalSocket from "./components/ModalSocket";
 import Navbar from "./components/Navbar";
@@ -6,8 +7,12 @@ import SidePanel from "./components/SidePanel";
 import TabBar from "./components/TabBar";
 import TabContent from "./components/TabContent";
 import { TooltipProvider } from "./components/ui/tooltip";
+import { watchAgentStatus } from "./store/agent";
 
 function App() {
+  // Driven by the agent's WebSocket connecting and disconnecting — no polling.
+  useEffect(() => watchAgentStatus(), []);
+
   return (
     <TooltipProvider delay={400}>
       <div className="flex h-screen w-screen flex-col">

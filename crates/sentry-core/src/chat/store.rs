@@ -47,6 +47,7 @@ impl ChatStore {
                 ON chat_messages(chat_space_id, created_at_ms);
             ",
         )?;
+        add_details_column(&conn)?;
         Ok(Self {
             conn: Mutex::new(conn),
         })
@@ -109,10 +110,14 @@ impl ChatStore {
         Ok(deleted > 0)
     }
 
-    /// Records a user message, appends a placeholder assistant reply (a stand-in
-    /// until the real chatbot agent is wired up), and — if this was the space's
-    /// first message — sets the space's title to `content`. Returns the space's full,
-    /// refreshed detail.
+    /// Records a user message and — if this was the space's first message — sets the
+    /// space's title to `content`. Returns the space's full, refreshed detail.
+    ///
+    /// Deliberately does **not** write a reply. The agent answers by calling
+    /// [`ChatStore::append_message`] over MCP, so the returned detail ends on the user's
+    /// turn and the UI shows a pending state until the real reply lands. An earlier version
+    /// fabricated `You asked "..."` here so the panel wasn't silent with no agent attached;
+    /// that placeholder now just races the real answer.
     pub fn send_message(
         &self,
         chat_space_id: i64,
@@ -128,19 +133,7 @@ impl ChatStore {
         )?;
 
         let now = now_ms();
-        tx.execute(
-            "INSERT INTO chat_messages (chat_space_id, role, content, created_at_ms)
-             VALUES (?1, 'user', ?2, ?3)",
-            rusqlite::params![chat_space_id, content, now],
-        )?;
-
-        // Placeholder until the real chatbot agent exists.
-        let reply = format!("You asked \"{content}\"");
-        tx.execute(
-            "INSERT INTO chat_messages (chat_space_id, role, content, created_at_ms)
-             VALUES (?1, 'assistant', ?2, ?3)",
-            rusqlite::params![chat_space_id, reply, now],
-        )?;
+        insert_message(&tx, chat_space_id, "user", content, None, now)?;
 
         if is_first_message {
             tx.execute(
@@ -159,6 +152,79 @@ impl ChatStore {
         tx.commit()?;
         Ok(detail)
     }
+
+    /// Appends a single message with an explicit `role` and bumps the space's
+    /// `updated_at_ms` so it sorts to the front of the sidebar.
+    ///
+    /// This is the write path for the external agent — both its replies (`"assistant"`) and
+    /// its failures (`"error"`, where `details` carries the trace). Unlike
+    /// [`ChatStore::send_message`] it never touches the space's title, so a space whose
+    /// first message arrives this way keeps the default `"New Chat"`.
+    ///
+    /// Errors with a foreign-key violation if no chat space with `chat_space_id`
+    /// exists (`foreign_keys` is `ON`).
+    pub fn append_message(
+        &self,
+        chat_space_id: i64,
+        role: &str,
+        content: &str,
+        details: Option<&str>,
+    ) -> rusqlite::Result<ChatMessage> {
+        let mut conn = self.conn.lock().unwrap_or_else(|e| e.into_inner());
+        let tx = conn.transaction()?;
+
+        let now = now_ms();
+        insert_message(&tx, chat_space_id, role, content, details, now)?;
+        let id = tx.last_insert_rowid();
+        tx.execute(
+            "UPDATE chat_spaces SET updated_at_ms = ?1 WHERE id = ?2",
+            rusqlite::params![now, chat_space_id],
+        )?;
+        tx.commit()?;
+
+        Ok(ChatMessage {
+            id,
+            chat_space_id,
+            role: role.to_string(),
+            content: content.to_string(),
+            details: details.map(str::to_string),
+            created_at_ms: now,
+        })
+    }
+}
+
+fn insert_message(
+    conn: &Connection,
+    chat_space_id: i64,
+    role: &str,
+    content: &str,
+    details: Option<&str>,
+    now: i64,
+) -> rusqlite::Result<()> {
+    conn.execute(
+        "INSERT INTO chat_messages (chat_space_id, role, content, details, created_at_ms)
+         VALUES (?1, ?2, ?3, ?4, ?5)",
+        rusqlite::params![chat_space_id, role, content, details, now],
+    )?;
+    Ok(())
+}
+
+/// Adds `chat_messages.details` to databases created before it existed.
+///
+/// `CREATE TABLE IF NOT EXISTS` above is a no-op on an existing database, so a new column has
+/// to be added separately or every install predating it would break on the first query.
+/// SQLite has no `ADD COLUMN IF NOT EXISTS`, hence the `table_info` check.
+fn add_details_column(conn: &Connection) -> rusqlite::Result<()> {
+    let mut stmt = conn.prepare("SELECT name FROM pragma_table_info('chat_messages')")?;
+    let exists = stmt
+        .query_map([], |row| row.get::<_, String>(0))?
+        .any(|name| matches!(name, Ok(name) if name == "details"));
+    drop(stmt);
+
+    if !exists {
+        conn.execute("ALTER TABLE chat_messages ADD COLUMN details TEXT", [])?;
+    }
+    Ok(())
 }
 
 fn get_chat_space_detail(conn: &Connection, id: i64) -> rusqlite::Result<Option<ChatSpaceDetail>> {
@@ -182,7 +248,7 @@ fn get_chat_space_detail(conn: &Connection, id: i64) -> rusqlite::Result<Option<
     };
 
     let mut stmt = conn.prepare(
-        "SELECT id, chat_space_id, role, content, created_at_ms
+        "SELECT id, chat_space_id, role, content, details, created_at_ms
          FROM chat_messages
          WHERE chat_space_id = ?1
          ORDER BY created_at_ms ASC, id ASC",
@@ -194,7 +260,8 @@ fn get_chat_space_detail(conn: &Connection, id: i64) -> rusqlite::Result<Option<
                 chat_space_id: row.get(1)?,
                 role: row.get(2)?,
                 content: row.get(3)?,
-                created_at_ms: row.get(4)?,
+                details: row.get(4)?,
+                created_at_ms: row.get(5)?,
             })
         })?
         .collect::<rusqlite::Result<Vec<_>>>()?;

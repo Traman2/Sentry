@@ -12,8 +12,8 @@ the four component templates under `.github/ISSUE_TEMPLATE/`:
 | --- | --- | --- |
 | `sentry-core.yml` | Data collection library (`crates/sentry-core`) | `sentry-core` |
 | `sentry-tauri-ui.yml` | Desktop app, frontend + Tauri backend (`crates/sentry-tauri-ui`) | `sentry-tauri-ui` |
-| `sentry-mcp.yml` | MCP server (`crates/sentry-mcp`) | `sentry-mcp` |
-| `python-agent.yml` | External Python MCP client / chat agent | `python-agent` |
+| `sentry-mcp.yml` | In-process MCP server (`crates/sentry-tauri-ui/src-tauri/src/mcp`) | `sentry-mcp` |
+| `python-agent.yml` | External LangGraph MCP agent (`agent/`) | `python-agent` |
 
 ## Steps
 

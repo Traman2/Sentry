@@ -13,8 +13,13 @@ export interface ChatSpace {
 export interface ChatMessage {
   id: number;
   chat_space_id: number;
-  role: "user" | "assistant";
+  /** `"error"` is a failed agent turn and `"interrupted"` one the user stopped — both
+   * recorded as real messages so a turn that never produced a reply doesn't leave the panel
+   * waiting on one that isn't coming. */
+  role: "user" | "assistant" | "error" | "interrupted";
   content: string;
+  /** Long-form supporting text, shown behind a disclosure. Populated for `"error"`. */
+  details: string | null;
   created_at_ms: number;
 }
 

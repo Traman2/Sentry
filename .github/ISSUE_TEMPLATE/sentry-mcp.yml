@@ -1,12 +1,12 @@
 name: "sentry-mcp"
-description: Bug or improvement in the MCP server exposing system data as tools/resources for an external agent.
+description: Bug or improvement in the in-process MCP server exposing system data as tools for an external agent.
 title: "[sentry-mcp] "
 labels: ["sentry-mcp"]
 body:
   - type: markdown
     attributes:
       value: |
-        Use this for issues in `crates/sentry-mcp` — the MCP (Model Context Protocol) server that exposes `sentry-core` data as tools/resources.
+        Use this for issues in `crates/sentry-tauri-ui/src-tauri/src/mcp` — the MCP (Model Context Protocol) server that exposes `sentry-core` data as tools. It runs inside the desktop app process and is served over streamable HTTP on loopback.
   - type: textarea
     id: summary
     attributes:

@@ -10,6 +10,12 @@
     "rustrover": {
       "url": "http://127.0.0.1:64522/stream",
       "type": "http"
+    },
+    "docs-langchain": {
+      "url": "https://docs.langchain.com/mcp"
+    },
+    "reference-langchain": {
+      "url": "https://reference.langchain.com/mcp"
     }
   }
 }

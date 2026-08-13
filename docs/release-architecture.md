@@ -55,7 +55,6 @@ Versions used to live independently in five files, all coincidentally
 `0.1.0`:
 
 - `crates/sentry-core/Cargo.toml`
-- `crates/sentry-mcp/Cargo.toml`
 - `crates/sentry-tauri-ui/src-tauri/Cargo.toml`
 - `crates/sentry-tauri-ui/src-tauri/tauri.conf.json` (`"version"`)
 - `crates/sentry-tauri-ui/package.json`
@@ -65,7 +64,7 @@ Two changes collapse that to two commands:
 - `tauri.conf.json`'s `"version"` now points at `"../package.json"` (a value
   Tauri reads natively) instead of holding its own copy.
 - The skill runs `cargo set-version --workspace <version>` (via
-  [`cargo-edit`](https://github.com/killercup/cargo-edit)) to bump the three
+  [`cargo-edit`](https://github.com/killercup/cargo-edit)) to bump the two
   Rust crates in one shot, and `npm version <version> --no-git-tag-version`
   inside `crates/sentry-tauri-ui` to bump `package.json` (which
   `tauri.conf.json` now inherits from).

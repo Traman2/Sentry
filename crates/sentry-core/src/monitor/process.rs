@@ -1,7 +1,7 @@
 //! Per-process metrics, shaped as flat table rows.
 
 use serde::Serialize;
-use sysinfo::{Pid, Process, System, Users};
+use sysinfo::{Pid, Process, Signal, System, Users};
 
 use super::units::{format_bytes, format_bytes_per_sec, format_percent};
 
@@ -140,9 +140,78 @@ fn row_from_process(process: &Process, users: &Users, total_memory_bytes: u64) -
 #[derive(Debug, Clone, Serialize)]
 pub struct ProcessDetails {
     pub pid: u32,
+    /// The process's name, carried here so a caller that looked up one pid can confirm what
+    /// it actually inspected without a second, full-table refresh just to resolve a name.
+    pub name: String,
     pub current_working_directory: Option<String>,
     pub root_directory: Option<String>,
     pub environment: Vec<String>,
+}
+
+/// The result of attempting to terminate a process.
+///
+/// Every field is populated on both success and failure so a caller can tell the three
+/// outcomes apart without inspecting an error string: the process wasn't there
+/// (`found: false`), it was there but the signal couldn't be delivered
+/// (`found: true, delivered: false`), or it was signalled (`delivered: true`).
+#[derive(Debug, Clone, Serialize)]
+pub struct KillOutcome {
+    pub pid: u32,
+    /// The name of the process as it was at the moment of the attempt, when one was found.
+    pub name: Option<String>,
+    /// Whether a process with this pid existed in `system`'s process list.
+    pub found: bool,
+    /// The signal that was attempted, e.g. `"Kill"`.
+    pub signal: String,
+    /// Whether the signal was actually delivered.
+    pub delivered: bool,
+    /// Human-readable explanation, suitable for surfacing to a user or an agent.
+    pub message: String,
+}
+
+/// Sends `signal` (default [`Signal::Kill`]) to `pid`.
+///
+/// Operates on `system`'s **last-refreshed** process list — it does not refresh. Callers
+/// that might be holding a stale table should go through [`super::Monitor::kill_process`],
+/// which refreshes the single pid first; killing from a stale table risks terminating an
+/// unrelated process that has since inherited a recycled pid.
+///
+/// `sysinfo` reports an unsupported signal (`kill_with` returning `None`) distinctly from a
+/// failed delivery; both come back as `delivered: false`, distinguished by `message`.
+pub fn kill(system: &System, pid: u32, signal: Option<Signal>) -> KillOutcome {
+    let signal = signal.unwrap_or(Signal::Kill);
+    let Some(process) = system.process(Pid::from_u32(pid)) else {
+        return KillOutcome {
+            pid,
+            name: None,
+            found: false,
+            signal: format!("{signal:?}"),
+            delivered: false,
+            message: format!("no process with pid {pid}"),
+        };
+    };
+
+    let name = process.name().to_string_lossy().into_owned();
+    let (delivered, message) = match process.kill_with(signal) {
+        Some(true) => (true, format!("sent {signal:?} to {name} (pid {pid})")),
+        Some(false) => (
+            false,
+            format!("the OS refused to deliver {signal:?} to {name} (pid {pid}) — it may be protected or already exiting"),
+        ),
+        None => (
+            false,
+            format!("{signal:?} is not supported on this platform"),
+        ),
+    };
+
+    KillOutcome {
+        pid,
+        name: Some(name),
+        found: true,
+        signal: format!("{signal:?}"),
+        delivered,
+        message,
+    }
 }
 
 /// Looks up [`ProcessDetails`] for a single `pid`, or `None` if the process no longer
@@ -151,6 +220,7 @@ pub fn details(system: &System, pid: u32) -> Option<ProcessDetails> {
     let process = system.process(Pid::from_u32(pid))?;
     Some(ProcessDetails {
         pid,
+        name: process.name().to_string_lossy().into_owned(),
         current_working_directory: process
             .cwd()
             .map(|path| path.to_string_lossy().into_owned()),

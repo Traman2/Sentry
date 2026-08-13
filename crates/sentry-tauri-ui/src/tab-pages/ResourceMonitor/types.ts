@@ -50,6 +50,7 @@ export interface ProcessRow {
  */
 export interface ProcessDetails {
   pid: number;
+  name: string;
   current_working_directory: string | null;
   root_directory: string | null;
   environment: string[];
@@ -201,6 +202,22 @@ export interface ProcessSamplePoint {
   memory_bytes: number;
   disk_read_bytes_per_sec: number;
   disk_written_bytes_per_sec: number;
+}
+
+/**
+ * Mirrors `crates/sentry-core/src/monitor/process.rs::KillOutcome`.
+ *
+ * A failed termination comes back as a normal result with `delivered: false`, not as a
+ * rejected promise — "it was already gone" and "the OS refused" are outcomes to report,
+ * not errors.
+ */
+export interface KillOutcome {
+  pid: number;
+  name: string | null;
+  found: boolean;
+  signal: string;
+  delivered: boolean;
+  message: string;
 }
 
 /** Mirrors `crates/sentry-core/src/tracking/models.rs::TrackedProcess`. */
