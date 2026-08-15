@@ -3524,7 +3524,7 @@ dependencies = [
 
 [[package]]
 name = "sentry-core"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "netstat2",
  "rusqlite",
@@ -3535,7 +3535,7 @@ dependencies = [
 
 [[package]]
 name = "sentry-tauri-ui"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "axum",
  "rmcp",
