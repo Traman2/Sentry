@@ -1,6 +1,6 @@
 # Release architecture
 
-How a release of the Sentry desktop app gets cut, who writes what, and why
+How a release of the System-Expert desktop app gets cut, who writes what, and why
 it's split the way it is.
 
 ## Summary
@@ -54,10 +54,10 @@ Windows build fails partway, the draft just sits there until it's re-run
 Versions used to live independently in five files, all coincidentally
 `0.1.0`:
 
-- `crates/sentry-core/Cargo.toml`
-- `crates/sentry-tauri-ui/src-tauri/Cargo.toml`
-- `crates/sentry-tauri-ui/src-tauri/tauri.conf.json` (`"version"`)
-- `crates/sentry-tauri-ui/package.json`
+- `crates/system-expert-core/Cargo.toml`
+- `crates/system-expert-tauri-ui/src-tauri/Cargo.toml`
+- `crates/system-expert-tauri-ui/src-tauri/tauri.conf.json` (`"version"`)
+- `crates/system-expert-tauri-ui/package.json`
 
 Two changes collapse that to two commands:
 
@@ -66,7 +66,7 @@ Two changes collapse that to two commands:
 - The skill runs `cargo set-version --workspace <version>` (via
   [`cargo-edit`](https://github.com/killercup/cargo-edit)) to bump the two
   Rust crates in one shot, and `npm version <version> --no-git-tag-version`
-  inside `crates/sentry-tauri-ui` to bump `package.json` (which
+  inside `crates/system-expert-tauri-ui` to bump `package.json` (which
   `tauri.conf.json` now inherits from).
 
 ## Trigger design

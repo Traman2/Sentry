@@ -1,6 +1,6 @@
 ---
 name: component-scaffold
-description: Scaffold a new modal, sidebar panel, tab page, or shared UI component for the sentry-tauri-ui desktop app, following this repo's established file placement, state, and styling conventions. Use whenever the user asks to add a new modal, a new sidebar panel, a new tab, or a new reusable component to crates/sentry-tauri-ui — before writing any code from scratch.
+description: Scaffold a new modal, sidebar panel, tab page, or shared UI component for the system-expert-tauri-ui desktop app, following this repo's established file placement, state, and styling conventions. Use whenever the user asks to add a new modal, a new sidebar panel, a new tab, or a new reusable component to crates/system-expert-tauri-ui — before writing any code from scratch.
 ---
 
 # Component Scaffold
@@ -11,7 +11,7 @@ reading around the repo. Everything you need to scaffold correctly is
 below — you should not need to grep the frontend for "how do we usually do
 X" before using this skill.
 
-All paths are relative to `crates/sentry-tauri-ui/src/`.
+All paths are relative to `crates/system-expert-tauri-ui/src/`.
 
 ## Step 0: pick the archetype
 
@@ -88,4 +88,4 @@ Reference: `components/Gauge.tsx` (tiny, pure-presentational, takes props) and `
 
 ## After scaffolding
 
-Run `npx tsc --noEmit -p .` from `crates/sentry-tauri-ui/` to catch wiring mistakes (missing registration, wrong prop types, the circular-import gotcha above) before considering the component done.
+Run `npx tsc --noEmit -p .` from `crates/system-expert-tauri-ui/` to catch wiring mistakes (missing registration, wrong prop types, the circular-import gotcha above) before considering the component done.

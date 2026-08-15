@@ -1,4 +1,4 @@
-"""Entry point. The implementation lives in the `sentry_agent` package.
+"""Entry point. The implementation lives in the `system_expert_agent` package.
 
     python app.py --list-tools
     python app.py --list-models
@@ -8,7 +8,7 @@
 
 import sys
 
-from sentry_agent.cli import main
+from system_expert_agent.cli import main
 
 if __name__ == "__main__":
     sys.exit(main())

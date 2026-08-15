@@ -1,6 +1,6 @@
 ---
 name: ui-consistency-check
-description: Review new or changed frontend code in crates/sentry-tauri-ui against this app's modern-B2B-SaaS design language, design tokens, spacing, and component-reuse conventions, and report deviations. Use after writing or editing any .tsx/.css in crates/sentry-tauri-ui, or whenever the user asks whether the UI is "on brand", "consistent", "modern", or "flush with the rest of the app".
+description: Review new or changed frontend code in crates/system-expert-tauri-ui against this app's modern-B2B-SaaS design language, design tokens, spacing, and component-reuse conventions, and report deviations. Use after writing or editing any .tsx/.css in crates/system-expert-tauri-ui, or whenever the user asks whether the UI is "on brand", "consistent", "modern", or "flush with the rest of the app".
 ---
 
 # UI Consistency Check
@@ -11,11 +11,11 @@ that context, extracted from `index.css` and the existing components.
 Check changed code against this list directly; only open other files when
 you need to confirm how a specific existing pattern is actually used.
 
-Scope: `crates/sentry-tauri-ui/src/`.
+Scope: `crates/system-expert-tauri-ui/src/`.
 
 ## 0. The design language
 
-Sentry's UI targets **modern B2B SaaS** — the Vercel / Linear / Stripe
+System-Expert's UI targets **modern B2B SaaS** — the Vercel / Linear / Stripe
 dashboard idiom, rendered in this app's mint-and-navy brand palette rather
 than their grays. When a judgement call isn't settled by the rules below,
 ask "how would Vercel's dashboard do this?" and follow that.
@@ -43,7 +43,7 @@ What that actually means in practice:
 
 ## 1. Color tokens
 
-Source of truth: `crates/sentry-tauri-ui/src/index.css`. These are the only
+Source of truth: `crates/system-expert-tauri-ui/src/index.css`. These are the only
 colors that should appear in component code:
 
 | Token | Value | Use for |
@@ -155,7 +155,7 @@ on a `sticky` element.
 Before writing new markup, check whether it already exists. Everything in
 `components/ui/` is shadcn (style `base-nova`, built on `@base-ui/react`) —
 add more with `npx shadcn@latest add @shadcn/<name>` from
-`crates/sentry-tauri-ui`, don't hand-roll.
+`crates/system-expert-tauri-ui`, don't hand-roll.
 
 | Need | Use |
 | --- | --- |

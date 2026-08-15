@@ -1,11 +1,11 @@
 <div align="center">
 
-# Sentry — Keeping Tabs
+# System-Expert — Keeping Tabs
 
 **A desktop system monitor built so an AI agent can see and act on the same
 data you see on screen.**
 
-![Sentry Resource Monitor](README_IMAGES/README_Banner.png)
+![System-Expert Resource Monitor](README_IMAGES/README_Banner.png)
 
 [![Rust CI](https://github.com/Traman2/Sentry/actions/workflows/rust-ci.yml/badge.svg)](https://github.com/Traman2/Sentry/actions/workflows/rust-ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/Traman2/Sentry?sort=semver&label=release)](https://github.com/Traman2/Sentry/releases/latest)
@@ -16,13 +16,13 @@ data you see on screen.**
 
 </div>
 
-Sentry shows running processes, CPU, memory, disk, and network activity in a
+System-Expert shows running processes, CPU, memory, disk, and network activity in a
 native window — and it's built so that an AI agent can observe and act on
 the same data an operator sees on screen, over a built-in MCP server.
 
 ## Contents
 
-- [Why Sentry](#why-sentry)
+- [Why System-Expert](#why-system-expert)
 - [Workspace](#workspace)
 - [Screenshots](#screenshots)
 - [Getting started](#getting-started)
@@ -34,7 +34,7 @@ the same data an operator sees on screen, over a built-in MCP server.
 - [Contributing](#contributing)
 - [License](#license)
 
-## Why Sentry
+## Why System-Expert
 
 - **Live system view** — processes, CPU, memory, disk, and network, in a
   native desktop window.
@@ -55,8 +55,8 @@ The repo is two Rust crates plus one external component:
 
 | Crate / component | What it is |
 | --- | --- |
-| `crates/sentry-core` | Plain Rust library. Wraps `sysinfo` and shapes raw OS data into table-ready rows (processes, disks, network interfaces, system summary), plus four SQLite-backed stores (recorded history, chat spaces, tracked-process sessions, MCP client/tool-call usage). No network server, no UI — just data collection, persistence, and formatting. |
-| `crates/sentry-tauri-ui` | The desktop app. A Tauri (Rust) shell hosting a React/TypeScript frontend. Renders the process table, tabs, and chat panel — and hosts the MCP server in-process (`src-tauri/src/mcp/`). |
+| `crates/system-expert-core` | Plain Rust library. Wraps `sysinfo` and shapes raw OS data into table-ready rows (processes, disks, network interfaces, system summary), plus four SQLite-backed stores (recorded history, chat spaces, tracked-process sessions, MCP client/tool-call usage). No network server, no UI — just data collection, persistence, and formatting. |
+| `crates/system-expert-tauri-ui` | The desktop app. A Tauri (Rust) shell hosting a React/TypeScript frontend. Renders the process table, tabs, and chat panel — and hosts the MCP server in-process (`src-tauri/src/mcp/`). |
 | Python agent (external) | Not part of this workspace. A LangChain/LangGraph agent running on Groq that connects to the desktop app's MCP endpoint, reasons over the exposed tools, and writes replies back into the chat panel. |
 
 ## Screenshots
@@ -65,7 +65,7 @@ The repo is two Rust crates plus one external component:
 
 | Chat with the agent | MCP audit trail |
 | --- | --- |
-| ![Sentry chat panel](README_IMAGES/Chat_UI.png) | ![Sentry MCP audit trail](README_IMAGES/MCP_AUDIT_UI.png) |
+| ![System-Expert chat panel](README_IMAGES/Chat_UI.png) | ![System-Expert MCP audit trail](README_IMAGES/MCP_AUDIT_UI.png) |
 
 </div>
 
@@ -76,10 +76,10 @@ without it the monitoring UI works fully, but chat messages go unanswered.
 
 ```bash
 git clone https://github.com/Traman2/Sentry.git
-cd Sentry
+cd System-Expert
 
 # desktop app (UI + MCP server)
-cd crates/sentry-tauri-ui
+cd crates/system-expert-tauri-ui
 npm install
 npm run tauri dev
 ```
@@ -108,11 +108,11 @@ Want to dig deeper or send a pull request? See
 
 ```mermaid
 flowchart LR
-    subgraph core["crates/sentry-core (Rust library)"]
+    subgraph core["crates/system-expert-core (Rust library)"]
         Core["process / disk / network / system\ncollection and formatting"]
     end
 
-    subgraph desktop["crates/sentry-tauri-ui (the one binary)"]
+    subgraph desktop["crates/system-expert-tauri-ui (the one binary)"]
         UI["React frontend\n(process table, tabs, chat panel)"]
         Backend["Tauri Rust backend"]
         MCPServer["MCP server (rmcp)\n127.0.0.1:8765/mcp"]
@@ -130,11 +130,11 @@ flowchart LR
     Agent -- "MCP protocol\n(streamable HTTP, loopback)" --> MCPServer
 ```
 
-There is exactly one Rust binary. The Tauri app statically links `sentry-core`
+There is exactly one Rust binary. The Tauri app statically links `system-expert-core`
 and calls it as an ordinary Rust library, and it also hosts the MCP server in
 the same process — so the tools an agent calls read and mutate the very same
 stores the on-screen UI is rendering, with no cross-process synchronization.
-The Python agent is the only piece that reaches `sentry-core`'s data
+The Python agent is the only piece that reaches `system-expert-core`'s data
 indirectly, over the MCP protocol, because it isn't Rust and can't link the
 crate directly.
 
@@ -144,7 +144,7 @@ agent channel runs over that one MCP connection — tool calls for reading and
 acting on system state, chat tools for writing replies into the chat panel,
 and a config tool the agent polls to pick up the model chosen in the UI.
 
-None of that is load-bearing for the monitoring UI. It reads `sentry-core`
+None of that is load-bearing for the monitoring UI. It reads `system-expert-core`
 through direct function calls and never waits on the MCP server, so the
 process table, charts and history work identically whether the agent is
 running, crashed, or never installed. What breaks without an agent is exactly
@@ -161,9 +161,9 @@ independently of the client. Every read of "what's my CPU usage" pays a
 serialization and IPC-over-the-network cost, and the backend has to exist
 before the UI is useful at all.
 
-Here, `sentry-core` is not a service — it's a library with no network
+Here, `system-expert-core` is not a service — it's a library with no network
 surface. The desktop app's own UI never needs a server: the Tauri backend
-calls straight into `sentry-core` in-process, so the "backend" for the
+calls straight into `system-expert-core` in-process, so the "backend" for the
 monitoring UI is just function calls inside the same binary. The MCP server
 exists for exactly one reason: giving a non-Rust agent a language-agnostic
 way to reach the same logic. It's optional infrastructure for automation,
@@ -174,11 +174,11 @@ agent ever connects, the desktop app still shows live system data.
 
 ```
 crates/
-  sentry-core/       system data collection (library, no dependents required)
-  sentry-tauri-ui/   Tauri + React desktop app — the only binary
+  system-expert-core/       system data collection (library, no dependents required)
+  system-expert-tauri-ui/   Tauri + React desktop app — the only binary
     src/             React frontend
     src-tauri/       Rust backend (Tauri commands, window chrome)
-      src/mcp/       MCP server exposing sentry-core as tools, served in-process
+      src/mcp/       MCP server exposing system-expert-core as tools, served in-process
 agent/               external LangGraph agent (Python, not in the Cargo workspace)
 ```
 
@@ -213,7 +213,7 @@ monitoring UI is unaffected either way.
 
 Two constraints shape that surface:
 
-**Results are sized for a context window.** `sentry-core`'s types are built for a UI table —
+**Results are sized for a context window.** `system-expert-core`'s types are built for a UI table —
 every numeric field paired with a pre-formatted `_display` string, and a snapshot carrying
 every process on the machine. Returned raw, one `list_processes` call on a normal desktop is
 ~360 processes of ~30 fields each. So list tools project down to the fields an agent reasons
@@ -222,7 +222,7 @@ default) — a 24h query would otherwise return ~43,200 samples.
 
 **`kill_process` is guarded.** Callers pass `expect_name` alongside the pid; the server
 refreshes that pid and refuses if the name no longer matches, which is what stops a recycled
-pid from redirecting a kill onto an unrelated process. Critical OS processes and Sentry's own
+pid from redirecting a kill onto an unrelated process. Critical OS processes and System-Expert's own
 pid are refused outright unless `force` is set.
 
 ### Knowing who's calling
@@ -309,7 +309,7 @@ python app.py --serve                 # what the desktop app runs
 ```
 agent/
   app.py                  entry point
-  sentry_agent/
+  system_expert_agent/
     config.py             constants and the system prompt
     models.py             model registry, resolution, construction
     tools.py               the MCP connection and direct tool calls
@@ -335,7 +335,7 @@ the backend; the running agent reads it back over MCP on its next poll and swaps
 switching models mid-conversation costs nothing and keeps the thread's history. Nothing
 restarts.
 
-Standalone runs take `--model qwen` or the `SENTRY_AGENT_MODEL` env var instead, and accept
+Standalone runs take `--model qwen` or the `SYSTEM_EXPERT_AGENT_MODEL` env var instead, and accept
 any Groq model id so a model Groq adds tomorrow works without waiting for the registry. When
 the desktop app is driving, its picker wins.
 
@@ -343,7 +343,7 @@ Any MCP client can connect, not just this agent — to use it from Claude Code, 
 `.mcp.json`:
 
 ```json
-{ "mcpServers": { "sentry": { "url": "http://127.0.0.1:8765/mcp", "type": "http" } } }
+{ "mcpServers": { "system-expert": { "url": "http://127.0.0.1:8765/mcp", "type": "http" } } }
 ```
 
 ## Contributing
@@ -356,4 +356,4 @@ component live under **New Issue** on the
 
 ## License
 
-Sentry is licensed under the [MIT License](LICENSE).
+System-Expert is licensed under the [MIT License](LICENSE).

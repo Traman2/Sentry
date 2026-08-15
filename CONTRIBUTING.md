@@ -1,16 +1,16 @@
-# Contributing to Sentry
+# Contributing to System-Expert
 
-Thanks for taking a look at Sentry. This doc covers how the repo is laid out,
+Thanks for taking a look at System-Expert. This doc covers how the repo is laid out,
 how to get a dev environment running, and what's expected of a pull request.
 
 ## Project layout
 
-Sentry is a Cargo workspace plus one external Python component:
+System-Expert is a Cargo workspace plus one external Python component:
 
 ```
 crates/
-  sentry-core/       system data collection (library, no UI)
-  sentry-tauri-ui/    Tauri + React desktop app — the only binary
+  system-expert-core/       system data collection (library, no UI)
+  system-expert-tauri-ui/    Tauri + React desktop app — the only binary
     src/              React frontend
     src-tauri/         Rust backend + in-process MCP server
 agent/                external LangGraph agent (Python, not in the Cargo workspace)
@@ -32,7 +32,7 @@ You'll need:
 cargo check --workspace
 
 # Desktop app frontend
-cd crates/sentry-tauri-ui
+cd crates/system-expert-tauri-ui
 npm install
 npm run tauri dev
 
@@ -58,7 +58,7 @@ cargo test --workspace
 For frontend changes:
 
 ```bash
-cd crates/sentry-tauri-ui
+cd crates/system-expert-tauri-ui
 npm run build   # tsc + vite build
 ```
 
@@ -70,14 +70,14 @@ introducing a new style in a single file:
   to help write the change.
 - Comments explain *why*, not *what* — skip comments that just restate the
   code.
-- Keep `sentry-core` free of UI and network concerns; it's a plain data
+- Keep `system-expert-core` free of UI and network concerns; it's a plain data
   library. New capabilities exposed to the agent go through the MCP layer
-  in `crates/sentry-tauri-ui/src-tauri/src/mcp/`.
+  in `crates/system-expert-tauri-ui/src-tauri/src/mcp/`.
 
 ## Filing issues
 
 Use the issue templates under **New Issue** — they're split by component
-(`sentry-core`, `sentry-tauri-ui`, MCP server, Python agent) so bug reports
+(`system-expert-core`, `system-expert-tauri-ui`, MCP server, Python agent) so bug reports
 land with the right context up front. Search existing issues first to avoid
 duplicates.
 

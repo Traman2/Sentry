@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/sentry-core",
-    "crates/sentry-tauri-ui/src-tauri",
+    "crates/system-expert-core",
+    "crates/system-expert-tauri-ui/src-tauri",
 ]

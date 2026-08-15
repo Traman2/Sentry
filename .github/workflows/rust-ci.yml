@@ -32,15 +32,15 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: crates/sentry-tauri-ui/package-lock.json
+          cache-dependency-path: crates/system-expert-tauri-ui/package-lock.json
 
       - name: Install frontend dependencies
-        working-directory: crates/sentry-tauri-ui
+        working-directory: crates/system-expert-tauri-ui
         run: npm ci
 
       # tauri-build fails if `frontendDist` (../dist) doesn't exist yet.
       - name: Build frontend
-        working-directory: crates/sentry-tauri-ui
+        working-directory: crates/system-expert-tauri-ui
         run: npm run build
 
       - name: Setup Rust

@@ -17,7 +17,7 @@
     "reference-langchain": {
       "url": "https://reference.langchain.com/mcp"
     },
-    "sentry": {
+    "system-expert": {
       "type": "http",
       "url": "http://127.0.0.1:8765/mcp"
     }

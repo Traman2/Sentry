@@ -1,6 +1,6 @@
 ---
 name: create-issue
-description: File a GitHub issue against this repo (Sentry) using the component issue templates in .github/ISSUE_TEMPLATE/ — sentry-core, sentry-tauri-ui, sentry-mcp, or python-agent. Use when the user wants to open/file/create a GitHub issue, report a bug, or request a feature for one of the four system components.
+description: File a GitHub issue against this repo (System-Expert) using the component issue templates in .github/ISSUE_TEMPLATE/ — system-expert-core, system-expert-tauri-ui, system-expert-mcp, or python-agent. Use when the user wants to open/file/create a GitHub issue, report a bug, or request a feature for one of the four system components.
 ---
 
 # Create Issue
@@ -10,9 +10,9 @@ the four component templates under `.github/ISSUE_TEMPLATE/`:
 
 | Template file | Component | Label |
 | --- | --- | --- |
-| `sentry-core.yml` | Data collection library (`crates/sentry-core`) | `sentry-core` |
-| `sentry-tauri-ui.yml` | Desktop app, frontend + Tauri backend (`crates/sentry-tauri-ui`) | `sentry-tauri-ui` |
-| `sentry-mcp.yml` | In-process MCP server (`crates/sentry-tauri-ui/src-tauri/src/mcp`) | `sentry-mcp` |
+| `system-expert-core.yml` | Data collection library (`crates/system-expert-core`) | `system-expert-core` |
+| `system-expert-tauri-ui.yml` | Desktop app, frontend + Tauri backend (`crates/system-expert-tauri-ui`) | `system-expert-tauri-ui` |
+| `system-expert-mcp.yml` | In-process MCP server (`crates/system-expert-tauri-ui/src-tauri/src/mcp`) | `system-expert-mcp` |
 | `python-agent.yml` | External LangGraph MCP agent (`agent/`) | `python-agent` |
 
 ## Steps
@@ -23,7 +23,7 @@ the four component templates under `.github/ISSUE_TEMPLATE/`:
 
 2. **Read the matching template** at
    `.github/ISSUE_TEMPLATE/<component>.yml` to see its exact fields (e.g.
-   `sentry-tauri-ui.yml` has an `Area` dropdown, `sentry-core.yml` has an
+   `system-expert-tauri-ui.yml` has an `Area` dropdown, `system-expert-core.yml` has an
    `OS / platform` field). Gather the info for each field from the
    conversation; ask the user for anything required (`validations.required:
    true`) that's still missing. Skip optional fields the user doesn't have
@@ -34,7 +34,7 @@ the four component templates under `.github/ISSUE_TEMPLATE/`:
    template. Skip empty optional fields entirely rather than leaving them
    blank.
 
-4. **Title**: prefix with the template's `title` value (e.g. `[sentry-core]
+4. **Title**: prefix with the template's `title` value (e.g. `[system-expert-core]
    `) followed by a short summary of the issue.
 
 5. **Confirm with the user** before creating anything — show them the

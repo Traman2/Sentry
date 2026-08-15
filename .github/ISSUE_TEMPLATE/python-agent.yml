@@ -1,12 +1,12 @@
 name: "Python agent"
-description: Bug or improvement in the external LangGraph agent that drives the chat panel and calls sentry-mcp tools.
+description: Bug or improvement in the external LangGraph agent that drives the chat panel and calls system-expert-mcp tools.
 title: "[python-agent] "
 labels: ["python-agent"]
 body:
   - type: markdown
     attributes:
       value: |
-        Use this for the external Python agent in `agent/` (not part of this Cargo workspace) — the LangChain/LangGraph MCP client that reasons over `sentry-mcp` tools and drives the desktop app's chat panel.
+        Use this for the external Python agent in `agent/` (not part of this Cargo workspace) — the LangChain/LangGraph MCP client that reasons over `system-expert-mcp` tools and drives the desktop app's chat panel.
   - type: textarea
     id: summary
     attributes:
@@ -50,6 +50,6 @@ body:
     id: extra
     attributes:
       label: Additional context
-      description: Logs, whether sentry-mcp/sentry-tauri-ui were reachable, etc.
+      description: Logs, whether system-expert-mcp/system-expert-tauri-ui were reachable, etc.
     validations:
       required: false

@@ -1,11 +1,11 @@
 # Rust
 /target/
 **/target/
-# Cargo.lock is committed since this workspace produces a binary (sentry-tauri-ui)
+# Cargo.lock is committed since this workspace produces a binary (system-expert-tauri-ui)
 
 # Tauri / frontend
-crates/sentry-tauri-ui/node_modules/
-crates/sentry-tauri-ui/dist/
+crates/system-expert-tauri-ui/node_modules/
+crates/system-expert-tauri-ui/dist/
 
 # Python agent
 agent/.venv/

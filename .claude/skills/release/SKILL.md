@@ -1,6 +1,6 @@
 ---
 name: release
-description: Cut a new release of the Sentry desktop app — bump versions, write release notes from the actual codebase changes since the last tag, tag, and create a draft GitHub Release that the Windows build workflow attaches installers to and publishes. Use when the user runs /release or asks to cut/ship/tag a release.
+description: Cut a new release of the System-Expert desktop app — bump versions, write release notes from the actual codebase changes since the last tag, tag, and create a draft GitHub Release that the Windows build workflow attaches installers to and publishes. Use when the user runs /release or asks to cut/ship/tag a release.
 ---
 
 # Release
@@ -30,9 +30,9 @@ CI's job, on a real Windows runner.
    prior tag, just read the current tree — there's nothing to diff against)
    to get the *net* set of changed files, then read those files as they
    stand now (not the diff hunks) to understand what the app can actually
-   do today that it couldn't before. Group findings by area: `sentry-core`,
-   `sentry-tauri-ui`, `sentry-mcp` (the in-process MCP server, which lives at
-   `crates/sentry-tauri-ui/src-tauri/src/mcp/`), `python-agent` (skip a group
+   do today that it couldn't before. Group findings by area: `system-expert-core`,
+   `system-expert-tauri-ui`, `system-expert-mcp` (the in-process MCP server, which lives at
+   `crates/system-expert-tauri-ui/src-tauri/src/mcp/`), `python-agent` (skip a group
    with nothing in it). Ignore
    pure formatting/lint-only diffs — they're not release-note-worthy.
 
@@ -53,13 +53,13 @@ CI's job, on a real Windows runner.
 
 5. **Bump every version file.** From the repo root:
    - `cargo set-version --workspace <version>` — covers the 2 Rust crates
-     (`sentry-core`, `sentry-tauri-ui/src-tauri`) in one shot.
+     (`system-expert-core`, `system-expert-tauri-ui/src-tauri`) in one shot.
      If this errors with "no such command", tell the user once to run
      `cargo install cargo-edit`, then retry — don't silently hand-edit the
      Cargo.tomls with sed/regex instead.
    - `npm version <version> --no-git-tag-version` inside
-     `crates/sentry-tauri-ui` — covers `package.json` (and
-     `crates/sentry-tauri-ui/src-tauri/tauri.conf.json`'s `version`, since
+     `crates/system-expert-tauri-ui` — covers `package.json` (and
+     `crates/system-expert-tauri-ui/src-tauri/tauri.conf.json`'s `version`, since
      it points at `"../package.json"` rather than holding its own copy).
 
 6. **Update `CHANGELOG.md`** at the repo root (create it with a `#

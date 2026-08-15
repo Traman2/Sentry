@@ -3523,34 +3523,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sentry-core"
-version = "1.0.0"
-dependencies = [
- "netstat2",
- "rusqlite",
- "serde",
- "serde_json",
- "sysinfo",
-]
-
-[[package]]
-name = "sentry-tauri-ui"
-version = "1.0.0"
-dependencies = [
- "axum",
- "rmcp",
- "schemars 1.2.2",
- "sentry-core",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-opener",
- "tokio",
-]
-
-[[package]]
 name = "serde"
 version = "1.0.229"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4007,6 +3979,34 @@ dependencies = [
  "pkg-config",
  "toml 0.8.2",
  "version-compare",
+]
+
+[[package]]
+name = "system-expert-core"
+version = "1.0.0"
+dependencies = [
+ "netstat2",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "sysinfo",
+]
+
+[[package]]
+name = "system-expert-tauri-ui"
+version = "1.0.0"
+dependencies = [
+ "axum",
+ "rmcp",
+ "schemars 1.2.2",
+ "serde",
+ "serde_json",
+ "system-expert-core",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-opener",
+ "tokio",
 ]
 
 [[package]]

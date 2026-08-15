@@ -1,0 +1,54 @@
+name: "system-expert-mcp"
+description: Bug or improvement in the in-process MCP server exposing system data as tools for an external agent.
+title: "[system-expert-mcp] "
+labels: ["system-expert-mcp"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for issues in `crates/system-expert-tauri-ui/src-tauri/src/mcp` — the MCP (Model Context Protocol) server that exposes `system-expert-core` data as tools. It runs inside the desktop app process and is served over streamable HTTP on loopback.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What's wrong, or what should be added/changed?
+    validations:
+      required: true
+  - type: input
+    id: tool
+    attributes:
+      label: Affected tool/resource name
+      description: The specific MCP tool or resource, if applicable.
+    validations:
+      required: false
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Include the request/response (stdio or SSE) if possible.
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: false
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs. actual behavior
+    validations:
+      required: false
+  - type: input
+    id: client
+    attributes:
+      label: MCP client used
+      description: Check the desktop app's "MCP Clients" sidebar panel for the exact client, process, and pid System-Expert recorded for the call in question, if unsure.
+      placeholder: "Python agent, Claude Desktop, custom client, ..."
+    validations:
+      required: false
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Logs, transport (stdio/SSE), related system-expert-core behavior.
+    validations:
+      required: false
