@@ -12,6 +12,8 @@ agent/.venv/
 agent/__pycache__/
 agent/**/__pycache__/
 agent/*.egg-info/
+# LangGraph conversation checkpoints (per-machine, not the app's chat transcript)
+agent/checkpoints.sqlite*
 
 # Secrets — the agent reads its API key from the environment
 .env

@@ -164,6 +164,50 @@ fn messages_without_details_read_back_as_none() {
 }
 
 #[test]
+fn interrupt_if_awaiting_appends_when_the_last_turn_is_a_user_message() {
+    let store = ChatStore::open_in_memory().unwrap();
+    let space = store.create_chat_space().unwrap();
+    store.send_message(space.id, "why is cpu high").unwrap();
+
+    let detail = store
+        .interrupt_if_awaiting(space.id, "Process interrupted.")
+        .unwrap()
+        .expect("a user turn was awaiting a reply");
+
+    assert_eq!(detail.messages.len(), 2);
+    assert_eq!(detail.messages[1].role, "interrupted");
+    assert_eq!(detail.messages[1].content, "Process interrupted.");
+}
+
+#[test]
+fn interrupt_if_awaiting_is_a_no_op_once_a_reply_has_landed() {
+    // Regression test for a race between the interrupt command and the agent's own reply: if
+    // the reply has already landed — whether before the click or in the gap a two-step
+    // check-then-append would have left open — interrupting must not overwrite it.
+    let store = ChatStore::open_in_memory().unwrap();
+    let space = store.create_chat_space().unwrap();
+    store.send_message(space.id, "why is cpu high").unwrap();
+    store
+        .append_message(space.id, "assistant", "chrome.exe is at 40%", None)
+        .unwrap();
+
+    let result = store
+        .interrupt_if_awaiting(space.id, "Process interrupted.")
+        .unwrap();
+
+    assert!(result.is_none());
+    let detail = store.get_chat_space(space.id).unwrap().unwrap();
+    assert_eq!(detail.messages.len(), 2);
+    assert_eq!(detail.messages[1].role, "assistant");
+}
+
+#[test]
+fn interrupt_if_awaiting_returns_none_for_a_missing_chat_space() {
+    let store = ChatStore::open_in_memory().unwrap();
+    assert!(store.interrupt_if_awaiting(999, "Process interrupted.").unwrap().is_none());
+}
+
+#[test]
 fn opening_a_database_twice_does_not_re_add_the_details_column() {
     // The details column is added by ALTER TABLE, which errors if run twice — so opening an
     // existing database has to detect that it's already there. An in-memory database is

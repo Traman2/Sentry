@@ -1,5 +1,6 @@
 langchain
 langgraph
+langgraph-checkpoint-sqlite
 langchain-mcp-adapters
 langchain-groq
 python-dotenv

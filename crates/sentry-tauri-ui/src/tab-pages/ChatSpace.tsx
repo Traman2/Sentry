@@ -185,14 +185,23 @@ function ChatSpace({ tabId }: { tabId: string }) {
               <ChatEmptyState onPick={(prompt) => handleSend(prompt)} />
             ) : (
               <MessageGroup className="gap-7">
-                {messages.map((message) => {
+                {messages.map((message, index) => {
                   if (message.role === "user")
                     return <UserMessage key={message.id} message={message} />;
                   if (message.role === "error")
                     return <ErrorMessage key={message.id} message={message} />;
                   if (message.role === "interrupted")
                     return <InterruptedMessage key={message.id} message={message} />;
-                  return <AssistantMessage key={message.id} message={message} />;
+                  // A reply always immediately follows the user turn it answers, so the
+                  // previous row is the timer's start — see AssistantMessage.
+                  const previous = messages[index - 1];
+                  return (
+                    <AssistantMessage
+                      key={message.id}
+                      message={message}
+                      respondedToMessage={previous?.role === "user" ? previous : undefined}
+                    />
+                  );
                 })}
                 {pending !== null && (
                   <UserMessage

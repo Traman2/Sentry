@@ -2,6 +2,16 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
+# Where each conversation's LangGraph state (message history, tool-call results — what the
+# model actually sees on the next turn) is persisted. Lives next to the package rather than
+# in the process cwd so it resolves the same way whether the desktop app launches this with
+# `agent/` as its cwd or someone runs `python app.py` by hand from elsewhere. Separate from
+# the desktop app's own chat.sqlite (crates/sentry-core) since that's the transcript the UI
+# renders, not the graph's internal state.
+CHECKPOINT_DB = Path(__file__).resolve().parent.parent / "checkpoints.sqlite"
+
 # The desktop app serves MCP here, always. It binds this exact port and fails loudly rather
 # than falling back to another one, precisely so this can be a constant instead of something
 # discovered at runtime.

@@ -163,6 +163,50 @@ impl ChatStore {
     ///
     /// Errors with a foreign-key violation if no chat space with `chat_space_id`
     /// exists (`foreign_keys` is `ON`).
+    /// Appends `"interrupted"` as the space's next message, but only if its last message is
+    /// still a user turn awaiting a reply. Returns `None` without writing anything if not —
+    /// most notably if the agent's reply landed first.
+    ///
+    /// Unlike a caller doing that check via [`ChatStore::get_chat_space`] and then calling
+    /// [`ChatStore::append_message`] itself, this holds the store's lock for the whole
+    /// check-and-append: the agent's own `append_message` call (posting its reply over MCP,
+    /// from another thread) cannot land in the gap between them and get overwritten by a
+    /// stale interrupt.
+    pub fn interrupt_if_awaiting(
+        &self,
+        chat_space_id: i64,
+        content: &str,
+    ) -> rusqlite::Result<Option<ChatSpaceDetail>> {
+        let mut conn = self.conn.lock().unwrap_or_else(|e| e.into_inner());
+        let tx = conn.transaction()?;
+
+        let awaiting: Option<bool> = tx
+            .query_row(
+                "SELECT role = 'user' FROM chat_messages
+                 WHERE chat_space_id = ?1
+                 ORDER BY created_at_ms DESC, id DESC
+                 LIMIT 1",
+                [chat_space_id],
+                |row| row.get(0),
+            )
+            .optional()?;
+
+        if !awaiting.unwrap_or(false) {
+            return Ok(None);
+        }
+
+        let now = now_ms();
+        insert_message(&tx, chat_space_id, "interrupted", content, None, now)?;
+        tx.execute(
+            "UPDATE chat_spaces SET updated_at_ms = ?1 WHERE id = ?2",
+            rusqlite::params![now, chat_space_id],
+        )?;
+
+        let detail = get_chat_space_detail(&tx, chat_space_id)?;
+        tx.commit()?;
+        Ok(detail)
+    }
+
     pub fn append_message(
         &self,
         chat_space_id: i64,

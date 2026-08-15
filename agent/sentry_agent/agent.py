@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Awaitable, Callable
+from contextlib import AsyncExitStack
 from typing import Any
 
 from langchain.agents import create_agent
-from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 from . import models
-from .config import SYSTEM_PROMPT
+from .config import CHECKPOINT_DB, SYSTEM_PROMPT
 from .models import ModelSpec
 from .tools import SentryTools
 
@@ -27,8 +29,35 @@ class SentryAgent:
         self._spec = models.resolve(model)
         self._graph = None
         # Threads are keyed by chat space id, so each conversation in the app's UI carries
-        # its own history instead of us replaying the transcript on every turn.
-        self._checkpointer = InMemorySaver()
+        # its own history instead of us replaying the transcript on every turn. Backed by
+        # SQLite rather than memory so a restarted agent (a crash, `--serve` relaunching)
+        # picks a conversation back up instead of the model losing its grounding while the
+        # desktop app's own transcript — a separate store — still shows the earlier turns.
+        # Opened lazily because `AsyncSqliteSaver` needs a running event loop; closed via
+        # `aclose()`, which callers should invoke once when the process is shutting down.
+        # Guarded by a lock because `--serve` answers every chat space concurrently (see
+        # `chat_bridge.reconcile`) — without it, two spaces both hitting a cold start would
+        # each pass the `is None` check before either finished `await`ing, opening two
+        # connections to the same file and (on the desktop app's Windows default, no WAL)
+        # having the loser fail with "database is locked".
+        self._checkpointer: AsyncSqliteSaver | None = None
+        self._checkpointer_lock = asyncio.Lock()
+        self._exit_stack = AsyncExitStack()
+        self._graph_lock = asyncio.Lock()
+
+    async def aclose(self) -> None:
+        """Closes the checkpointer's database connection. Idempotent."""
+        await self._exit_stack.aclose()
+
+    async def _get_checkpointer(self) -> AsyncSqliteSaver:
+        async with self._checkpointer_lock:
+            if self._checkpointer is None:
+                saver = await self._exit_stack.enter_async_context(
+                    AsyncSqliteSaver.from_conn_string(str(CHECKPOINT_DB))
+                )
+                await saver.setup()
+                self._checkpointer = saver
+            return self._checkpointer
 
     @property
     def url(self) -> str:
@@ -56,16 +85,18 @@ class SentryAgent:
         return spec
 
     async def graph(self):
-        if self._graph is None:
-            if not self.tools.tools:
-                await self.load_tools()
-            self._graph = create_agent(
-                models.build_model(self._spec),
-                self.tools.tools,
-                system_prompt=SYSTEM_PROMPT,
-                checkpointer=self._checkpointer,
-            )
-        return self._graph
+        async with self._graph_lock:
+            if self._graph is None:
+                if not self.tools.tools:
+                    await self.load_tools()
+                checkpointer = await self._get_checkpointer()
+                self._graph = create_agent(
+                    models.build_model(self._spec),
+                    self.tools.tools,
+                    system_prompt=SYSTEM_PROMPT,
+                    checkpointer=checkpointer,
+                )
+            return self._graph
 
     async def ask(
         self,

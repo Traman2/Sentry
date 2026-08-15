@@ -82,36 +82,41 @@ async def run(argv: list[str] | None = None) -> int:
         print(exc, file=sys.stderr)
         return 2
 
-    if args.list_models:
-        print_models(agent.spec.key)
-        return 0
-
     try:
-        tools = await agent.load_tools()
-    except Exception as exc:
-        print(
-            f"could not reach the Sentry MCP server at {agent.url}: {describe(exc)}",
-            file=sys.stderr,
-        )
-        print("is the desktop app running?", file=sys.stderr)
-        return 1
-
-    if args.list_tools:
-        print(f"{len(tools)} tools at {agent.url}\n")
-        for tool in sorted(tools, key=lambda t: t.name):
-            summary = (tool.description or "").split(".")[0].strip()
-            print(f"  {tool.name:<26} {summary}")
-        return 0
-
-    try:
-        if args.ask:
-            print(await agent.ask(args.ask))
+        if args.list_models:
+            print_models(agent.spec.key)
             return 0
-        await serve(agent)
-        return 0
-    except RuntimeError as exc:  # missing API key, surfaced by models.build_model
-        print(exc, file=sys.stderr)
-        return 1
+
+        try:
+            tools = await agent.load_tools()
+        except Exception as exc:
+            print(
+                f"could not reach the Sentry MCP server at {agent.url}: {describe(exc)}",
+                file=sys.stderr,
+            )
+            print("is the desktop app running?", file=sys.stderr)
+            return 1
+
+        if args.list_tools:
+            print(f"{len(tools)} tools at {agent.url}\n")
+            for tool in sorted(tools, key=lambda t: t.name):
+                summary = (tool.description or "").split(".")[0].strip()
+                print(f"  {tool.name:<26} {summary}")
+            return 0
+
+        try:
+            if args.ask:
+                print(await agent.ask(args.ask))
+                return 0
+            await serve(agent)
+            return 0
+        except RuntimeError as exc:  # missing API key, surfaced by models.build_model
+            print(exc, file=sys.stderr)
+            return 1
+    finally:
+        # Releases the checkpointer's sqlite connection. A no-op if the graph was never
+        # built, e.g. --list-tools / --list-models exiting above before any turn ran.
+        await agent.aclose()
 
 
 def main(argv: list[str] | None = None) -> int:

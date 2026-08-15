@@ -12,7 +12,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { ChatMessage } from "@/store/chat";
 import { Markdown } from "./Markdown";
-import { formatMessageTime, formatThinkingDuration, mockThinkingDurationMs } from "./time";
+import { formatMessageTime, formatThinkingDuration } from "./time";
 
 function CopyAction({ content }: { content: string }) {
   const [copied, setCopied] = useState(false);
@@ -84,11 +84,20 @@ export function UserMessage({ message }: { message: ChatMessage }) {
  * that rich-block slot — it renders under the prose, inside the same column. */
 export function AssistantMessage({
   message,
+  respondedToMessage,
   children,
 }: {
   message: ChatMessage;
+  /** The user turn this reply answers — its `created_at_ms` is the start of the timer shown
+   * in the footer. Omitted (rather than guessed) when there's no matching turn to time
+   * against, e.g. a transcript that doesn't start on a user message. */
+  respondedToMessage?: ChatMessage;
   children?: ReactNode;
 }) {
+  const thinkingDurationMs = respondedToMessage
+    ? message.created_at_ms - respondedToMessage.created_at_ms
+    : undefined;
+
   return (
     <Message align="start" className="flex-col gap-2">
       <MessageContent className="gap-3 text-sm leading-relaxed text-navy">
@@ -97,7 +106,9 @@ export function AssistantMessage({
       </MessageContent>
       <MessageFooter className="gap-1 px-0 opacity-0 transition-opacity group-hover/message:opacity-100">
         <CopyAction content={message.content} />
-        <ThinkingTime durationMs={mockThinkingDurationMs(message.id)} />
+        {thinkingDurationMs !== undefined && thinkingDurationMs >= 0 && (
+          <ThinkingTime durationMs={thinkingDurationMs} />
+        )}
         <span className="text-[11px] text-navy/40 tabular-nums">
           {formatMessageTime(message.created_at_ms)}
         </span>

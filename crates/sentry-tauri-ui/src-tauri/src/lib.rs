@@ -251,7 +251,9 @@ fn set_agent_model(state: State<AgentState>, bus: State<EventBus>, model: String
 /// burning tokens on a reply nobody will see.
 ///
 /// Only appends when the space is genuinely still waiting — if a reply landed in the moment
-/// between the click and this running, that reply stands and the click is a no-op.
+/// between the click and this running, that reply stands and the click is a no-op. The
+/// check-and-append is atomic in the store precisely to make that moment as narrow as
+/// possible rather than a window this command itself could lose a race in.
 #[tauri::command]
 fn interrupt_chat(
     state: State<ChatState>,
@@ -260,28 +262,9 @@ fn interrupt_chat(
 ) -> Result<Option<ChatSpaceDetail>, String> {
     bus.publish(&Event::CancelChat { chat_space_id });
 
-    let detail = state
-        .0
-        .get_chat_space(chat_space_id)
-        .map_err(|e| e.to_string())?
-        .ok_or_else(|| "chat space not found".to_string())?;
-
-    let awaiting = detail
-        .messages
-        .last()
-        .is_some_and(|message| message.role == "user");
-    if !awaiting {
-        return Ok(None);
-    }
-
     state
         .0
-        .append_message(chat_space_id, "interrupted", "Process interrupted.", None)
-        .map_err(|e| e.to_string())?;
-
-    state
-        .0
-        .get_chat_space(chat_space_id)
+        .interrupt_if_awaiting(chat_space_id, "Process interrupted.")
         .map_err(|e| e.to_string())
 }
 

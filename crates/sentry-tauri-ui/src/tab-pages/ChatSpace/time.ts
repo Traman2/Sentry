@@ -18,10 +18,3 @@ export function formatThinkingDuration(durationMs: number): string {
   const minutes = Math.floor(seconds / 60);
   return `${minutes}m ${String(Math.round(seconds % 60)).padStart(2, "0")}s`;
 }
-
-/** TODO: replace with a real duration once the backend records how long the
- * agent spent on a turn. Derived from the message id so a given reply keeps the
- * same number across re-renders instead of flickering. */
-export function mockThinkingDurationMs(messageId: number): number {
-  return 2400 + ((messageId * 1373) % 26000);
-}

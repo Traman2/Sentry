@@ -6,6 +6,7 @@ requires-python = ">=3.11"
 dependencies = [
     "langchain",
     "langgraph",
+    "langgraph-checkpoint-sqlite",
     "langchain-mcp-adapters",
     "langchain-groq",
     "python-dotenv",

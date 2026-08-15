@@ -33,6 +33,7 @@ use rmcp::{
 };
 use sentry_core::{ChatStore, HistoryStore, Monitor, TrackingStore};
 use tauri::AppHandle;
+use tools::build_tool_router;
 
 pub use events::{Event, EventBus};
 pub use server::{McpStatus, start};
@@ -73,18 +74,18 @@ impl SentryMcp {
             chat,
             tracking,
             app,
-            tool_router: Self::tool_router(),
+            tool_router: build_tool_router(),
         }
     }
 
     /// How many tools this server exposes — surfaced to the UI through `get_mcp_status`.
     pub fn tool_count() -> usize {
-        Self::tool_router().list_all().len()
+        build_tool_router().list_all().len()
     }
 }
 
 // `router = self.tool_router` rather than the macro's default of `Self::tool_router()`: the
-// default rebuilds and re-registers all ~19 tools on every single `list_tools` and
+// default rebuilds and re-registers all 22 tools on every single `list_tools` and
 // `call_tool`. Pointing at the field builds the router once per session instead.
 #[tool_handler(router = self.tool_router)]
 impl ServerHandler for SentryMcp {
@@ -107,5 +108,21 @@ impl ServerHandler for SentryMcp {
                  user will read it."
                     .to_string(),
             )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tool_count_matches_every_registered_tool_router() {
+        // `build_tool_router` merges one `ToolRouter` per `tools/*.rs` file by name; a
+        // collision (e.g. two files defining a tool of the same name, or a file whose router
+        // was never added to the sum) drops a tool silently rather than failing to compile —
+        // `ToolRouter::merge` just overwrites. This pins the expected count so that kind of
+        // regression fails a test instead of only showing up as a tool missing from an
+        // agent's tool list.
+        assert_eq!(SentryMcp::tool_count(), 22);
     }
 }
