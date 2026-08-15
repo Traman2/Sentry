@@ -1,18 +1,108 @@
+<div align="center">
+
 # Sentry — Keeping Tabs
+
+**A desktop system monitor built so an AI agent can see and act on the same
+data you see on screen.**
 
 ![Sentry Resource Monitor](README_IMAGES/README_Banner.png)
 
-Sentry is a desktop system monitor. It shows running processes, CPU, memory,
-disk, and network activity in a native window, and it is built so that an AI
-agent can observe and act on the same data an operator sees on screen.
+[![Rust CI](https://github.com/Traman2/Sentry/actions/workflows/rust-ci.yml/badge.svg)](https://github.com/Traman2/Sentry/actions/workflows/rust-ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/Traman2/Sentry?sort=semver&label=release)](https://github.com/Traman2/Sentry/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Open issues](https://img.shields.io/github/issues/Traman2/Sentry)](https://github.com/Traman2/Sentry/issues)
+[![Open pull requests](https://img.shields.io/github/issues-pr/Traman2/Sentry)](https://github.com/Traman2/Sentry/pulls)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-The workspace is two Rust crates plus one external component:
+</div>
+
+Sentry shows running processes, CPU, memory, disk, and network activity in a
+native window — and it's built so that an AI agent can observe and act on
+the same data an operator sees on screen, over a built-in MCP server.
+
+## Contents
+
+- [Why Sentry](#why-sentry)
+- [Workspace](#workspace)
+- [Screenshots](#screenshots)
+- [Getting started](#getting-started)
+- [Architecture](#architecture)
+- [How this differs from typical services](#how-this-differs-from-typical-services)
+- [Layout](#layout)
+- [The MCP server](#the-mcp-server)
+- [The agent](#the-agent)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Why Sentry
+
+- **Live system view** — processes, CPU, memory, disk, and network, in a
+  native desktop window.
+- **Agent-native** — an in-process MCP server exposes 22 tools so an AI
+  agent reads and acts on exactly the data rendered on screen, with no
+  separate backend to keep in sync.
+- **Built-in chat panel** — talk to a LangGraph agent (served by Groq)
+  right inside the app; switch models mid-conversation with no restart.
+- **Full audit trail** — every tool call an agent makes is logged with
+  caller, arguments, status, and duration, and surfaced in the UI.
+- **One binary** — the monitoring UI and the MCP server share the same
+  Rust process and the same data stores; nothing else needs to be running
+  for the UI to work.
+
+## Workspace
+
+The repo is two Rust crates plus one external component:
 
 | Crate / component | What it is |
 | --- | --- |
 | `crates/sentry-core` | Plain Rust library. Wraps `sysinfo` and shapes raw OS data into table-ready rows (processes, disks, network interfaces, system summary), plus four SQLite-backed stores (recorded history, chat spaces, tracked-process sessions, MCP client/tool-call usage). No network server, no UI — just data collection, persistence, and formatting. |
 | `crates/sentry-tauri-ui` | The desktop app. A Tauri (Rust) shell hosting a React/TypeScript frontend. Renders the process table, tabs, and chat panel — and hosts the MCP server in-process (`src-tauri/src/mcp/`). |
 | Python agent (external) | Not part of this workspace. A LangChain/LangGraph agent running on Groq that connects to the desktop app's MCP endpoint, reasons over the exposed tools, and writes replies back into the chat panel. |
+
+## Screenshots
+
+<div align="center">
+
+| Chat with the agent | MCP audit trail |
+| --- | --- |
+| ![Sentry chat panel](README_IMAGES/Chat_UI.png) | ![Sentry MCP audit trail](README_IMAGES/MCP_AUDIT_UI.png) |
+
+</div>
+
+## Getting started
+
+You'll need Rust (stable) and Node.js 20+. The Python agent is optional —
+without it the monitoring UI works fully, but chat messages go unanswered.
+
+```bash
+git clone https://github.com/Traman2/Sentry.git
+cd Sentry
+
+# desktop app (UI + MCP server)
+cd crates/sentry-tauri-ui
+npm install
+npm run tauri dev
+```
+
+To enable the chat panel, also run the agent alongside it:
+
+```bash
+cd agent
+pip install -r requirements.txt
+cp .env.example .env   # add your GROQ_API_KEY
+python app.py --serve
+```
+
+> The desktop app normally spawns and supervises the agent for you — running
+> it by hand like this is only needed for development. See
+> [The agent](#the-agent) below for the full picture.
+
+Pre-built Windows installers are attached to each
+[release](https://github.com/Traman2/Sentry/releases) if you'd rather skip
+building from source.
+
+Want to dig deeper or send a pull request? See
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Architecture
 
@@ -137,8 +227,6 @@ pid are refused outright unless `force` is set.
 
 ### Knowing who's calling
 
-![Sentry MCP Audit Trail](README_IMAGES/MCP_AUDIT_UI.png)
-
 Any MCP client can connect — the bundled Python agent, Claude Code, Claude Desktop, or
 anything else pointed at the loopback endpoint — so every tool call is recorded: which client
 made it, on which tool, from which OS process, and whether it succeeded. Two independent
@@ -224,10 +312,10 @@ agent/
   sentry_agent/
     config.py             constants and the system prompt
     models.py             model registry, resolution, construction
-    tools.py              the MCP connection and direct tool calls
-    agent.py              the LangGraph agent and its hot-swappable model
-    chat_bridge.py        answering messages from the app's chat panel
-    cli.py                argument parsing and entry point
+    tools.py               the MCP connection and direct tool calls
+    agent.py               the LangGraph agent and its hot-swappable model
+    chat_bridge.py         answering messages from the app's chat panel
+    cli.py                 argument parsing and entry point
 ```
 
 Each chat space maps to its own LangGraph thread, so conversations keep their history without
@@ -257,3 +345,15 @@ Any MCP client can connect, not just this agent — to use it from Claude Code, 
 ```json
 { "mcpServers": { "sentry": { "url": "http://127.0.0.1:8765/mcp", "type": "http" } } }
 ```
+
+## Contributing
+
+Contributions are welcome — bug reports, feature ideas, and pull requests
+alike. Start with [CONTRIBUTING.md](CONTRIBUTING.md) for dev setup, the
+checks CI runs, and what a good PR looks like. Issue templates for each
+component live under **New Issue** on the
+[issues page](https://github.com/Traman2/Sentry/issues/new/choose).
+
+## License
+
+Sentry is licensed under the [MIT License](LICENSE).
