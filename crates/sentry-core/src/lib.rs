@@ -9,7 +9,9 @@ pub use history::{
     DEFAULT_RETENTION, HistoryStore, ProcessSamplePoint, RecorderHandle, SystemSamplePoint,
     spawn_recorder,
 };
-pub use mcp_usage::{CallStatus, ClientIdentity, McpClient, McpClientDetail, McpToolCall, McpUsageStore};
+pub use mcp_usage::{
+    CallStatus, ClientIdentity, McpClient, McpClientDetail, McpToolCall, McpUsageStore,
+};
 pub use monitor::{
     ComponentMetrics, DiskMetrics, KillOutcome, Monitor, NetworkInterfaceMetrics, ProcessDetails,
     ProcessIdentity, ProcessRow, SystemSnapshot, SystemSummary, UserAccount,

@@ -5,8 +5,8 @@
 //! `std::sync::Mutex` across SQLite I/O. Calling those directly from an async tool body would
 //! park an axum worker thread for the duration.
 
-use rmcp::ErrorData as McpError;
 use rmcp::model::{CallToolResult, ContentBlock};
+use rmcp::ErrorData as McpError;
 use serde::Serialize;
 
 /// Runs a blocking `sentry-core` call on the blocking pool.

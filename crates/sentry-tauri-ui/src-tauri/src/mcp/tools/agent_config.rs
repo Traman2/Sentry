@@ -1,6 +1,6 @@
 //! The one read-only tool exposing the app's own agent settings to the agent itself.
 
-use rmcp::{ErrorData as McpError, model::CallToolResult, tool, tool_router};
+use rmcp::{model::CallToolResult, tool, tool_router, ErrorData as McpError};
 use tauri::Manager;
 
 use super::helpers::json_ok;

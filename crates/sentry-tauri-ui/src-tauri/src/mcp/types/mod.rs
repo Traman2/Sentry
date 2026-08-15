@@ -19,4 +19,4 @@ mod process;
 
 pub use downsample::{downsample_process, downsample_system};
 pub use guard::kill_guard;
-pub use process::{ProcessPage, ProcessSort, page_processes};
+pub use process::{page_processes, ProcessPage, ProcessSort};

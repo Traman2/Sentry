@@ -4,7 +4,7 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 use rmcp::transport::streamable_http_server::{
-    StreamableHttpServerConfig, StreamableHttpService, session::local::LocalSessionManager,
+    session::local::LocalSessionManager, StreamableHttpServerConfig, StreamableHttpService,
 };
 use sentry_core::{ChatStore, HistoryStore, McpUsageStore, TrackingStore};
 use serde::Serialize;
@@ -88,22 +88,20 @@ pub async fn start(
         StreamableHttpServerConfig::default(),
     );
 
-    let router = axum::Router::new()
-        .nest_service(MCP_PATH, service)
-        .route(
-            EVENTS_PATH,
-            axum::routing::any(move |ws| {
-                // Each new connection is greeted with the model currently selected, so an
-                // agent is correct from its first frame without having to ask.
-                let model = app_model(&app_for_events).unwrap_or_else(|| initial_model.clone());
-                events::handler(
-                    ws,
-                    bus.clone(),
-                    events::Event::AgentConfig { model },
-                    app_for_events.clone(),
-                )
-            }),
-        );
+    let router = axum::Router::new().nest_service(MCP_PATH, service).route(
+        EVENTS_PATH,
+        axum::routing::any(move |ws| {
+            // Each new connection is greeted with the model currently selected, so an
+            // agent is correct from its first frame without having to ask.
+            let model = app_model(&app_for_events).unwrap_or_else(|| initial_model.clone());
+            events::handler(
+                ws,
+                bus.clone(),
+                events::Event::AgentConfig { model },
+                app_for_events.clone(),
+            )
+        }),
+    );
 
     tauri::async_runtime::spawn(async move {
         // `with_connect_info` is what makes `ConnectInfo<SocketAddr>` available inside a

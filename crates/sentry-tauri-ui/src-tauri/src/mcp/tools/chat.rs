@@ -1,8 +1,8 @@
 //! Reading and creating chat spaces. See `chat_replies` for the agent's write-back.
 
 use rmcp::{
-    ErrorData as McpError, handler::server::wrapper::Parameters, model::CallToolResult, tool,
-    tool_router,
+    handler::server::wrapper::Parameters, model::CallToolResult, tool, tool_router,
+    ErrorData as McpError,
 };
 use tauri::Emitter;
 

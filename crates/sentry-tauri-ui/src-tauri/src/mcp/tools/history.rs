@@ -3,14 +3,14 @@
 use std::time::Duration;
 
 use rmcp::{
-    ErrorData as McpError, handler::server::wrapper::Parameters, model::CallToolResult, tool,
-    tool_router,
+    handler::server::wrapper::Parameters, model::CallToolResult, tool, tool_router,
+    ErrorData as McpError,
 };
 use serde::Serialize;
 
 use super::helpers::{blocking, db_error, default_max_points, json_ok};
-use crate::mcp::SentryMcp;
 use crate::mcp::types::{downsample_process, downsample_system};
+use crate::mcp::SentryMcp;
 
 fn default_since_secs() -> u64 {
     3600

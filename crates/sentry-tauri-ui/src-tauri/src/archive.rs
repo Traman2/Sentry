@@ -57,10 +57,7 @@ pub fn end_and_archive(
 }
 
 /// Reads a session's archive back off disk, or `None` if it was never archived.
-pub fn read_archive(
-    tracking: &TrackingStore,
-    id: i64,
-) -> Result<Option<TrackedArchive>, String> {
+pub fn read_archive(tracking: &TrackingStore, id: i64) -> Result<Option<TrackedArchive>, String> {
     let Some(tracked) = tracking.get(id).map_err(|e| e.to_string())? else {
         return Ok(None);
     };

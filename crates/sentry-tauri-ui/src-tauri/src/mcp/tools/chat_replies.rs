@@ -1,8 +1,9 @@
 //! The agent's write-back into a chat space: a reply, progress, or a failure.
 
 use rmcp::{
-    ErrorData as McpError, handler::server::wrapper::Parameters,
-    model::{CallToolResult, ContentBlock}, tool, tool_router,
+    handler::server::wrapper::Parameters,
+    model::{CallToolResult, ContentBlock},
+    tool, tool_router, ErrorData as McpError,
 };
 use tauri::Emitter;
 

@@ -8,17 +8,26 @@ use sentry_core::{ProcessSamplePoint, SystemSamplePoint};
 /// query returns ~43,200 points. Averaging into buckets keeps the shape of the curve —
 /// which is all an agent needs to answer "was this spiking an hour ago" — at a size that
 /// fits in a tool result.
-pub fn downsample_system(points: Vec<SystemSamplePoint>, max_points: usize) -> Vec<SystemSamplePoint> {
+pub fn downsample_system(
+    points: Vec<SystemSamplePoint>,
+    max_points: usize,
+) -> Vec<SystemSamplePoint> {
     bucket(points, max_points, |chunk| {
         let n = chunk.len() as f64;
         SystemSamplePoint {
             // The bucket's last timestamp, so the final point is the most recent reading
             // rather than an average that lands slightly in the past.
             timestamp_ms: chunk[chunk.len() - 1].timestamp_ms,
-            cpu_usage_percent: (chunk.iter().map(|p| p.cpu_usage_percent as f64).sum::<f64>() / n)
-                as f32,
-            used_memory_bytes: (chunk.iter().map(|p| p.used_memory_bytes as f64).sum::<f64>() / n)
-                as u64,
+            cpu_usage_percent: (chunk
+                .iter()
+                .map(|p| p.cpu_usage_percent as f64)
+                .sum::<f64>()
+                / n) as f32,
+            used_memory_bytes: (chunk
+                .iter()
+                .map(|p| p.used_memory_bytes as f64)
+                .sum::<f64>()
+                / n) as u64,
             total_memory_bytes: chunk[chunk.len() - 1].total_memory_bytes,
             used_swap_bytes: (chunk.iter().map(|p| p.used_swap_bytes as f64).sum::<f64>() / n)
                 as u64,

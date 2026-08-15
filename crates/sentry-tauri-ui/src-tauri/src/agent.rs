@@ -87,7 +87,9 @@ impl AgentProcess {
         let running = self.is_running();
         AgentStatus {
             running,
-            pid: running.then(|| self.child.as_ref().map(|c| c.id())).flatten(),
+            pid: running
+                .then(|| self.child.as_ref().map(|c| c.id()))
+                .flatten(),
             model: self.model.clone(),
             detail: if running {
                 "running".to_string()
@@ -107,9 +109,8 @@ impl AgentProcess {
                  set {AGENT_DIR_ENV} to override)"
             )
         })?;
-        let python = python_for(&dir).ok_or_else(|| {
-            format!("no Python interpreter found for {}", dir.display())
-        })?;
+        let python = python_for(&dir)
+            .ok_or_else(|| format!("no Python interpreter found for {}", dir.display()))?;
 
         let child = Command::new(&python)
             .arg("app.py")
@@ -205,5 +206,9 @@ fn python_for(dir: &Path) -> Option<PathBuf> {
     if venv.is_file() {
         return Some(venv);
     }
-    Some(PathBuf::from(if cfg!(windows) { "python" } else { "python3" }))
+    Some(PathBuf::from(if cfg!(windows) {
+        "python"
+    } else {
+        "python3"
+    }))
 }

@@ -2,8 +2,8 @@
 //! back once it's ended.
 
 use rmcp::{
-    ErrorData as McpError, handler::server::wrapper::Parameters, model::CallToolResult, tool,
-    tool_router,
+    handler::server::wrapper::Parameters, model::CallToolResult, tool, tool_router,
+    ErrorData as McpError,
 };
 
 use super::helpers::{blocking, db_error, json_ok, tool_error};
@@ -41,12 +41,8 @@ impl SentryMcp {
         Parameters(params): Parameters<StartTrackingParams>,
     ) -> Result<CallToolResult, McpError> {
         let tracking = self.tracking.clone();
-        let tracked = blocking(move || {
-            tracking
-                .start(&params.name, &params.pids)
-                .map_err(db_error)
-        })
-        .await?;
+        let tracked =
+            blocking(move || tracking.start(&params.name, &params.pids).map_err(db_error)).await?;
         json_ok(&tracked)
     }
 
@@ -56,10 +52,8 @@ impl SentryMcp {
         Parameters(params): Parameters<ListTrackedParams>,
     ) -> Result<CallToolResult, McpError> {
         let tracking = self.tracking.clone();
-        let sessions = blocking(move || {
-            tracking.list(params.name.as_deref()).map_err(db_error)
-        })
-        .await?;
+        let sessions =
+            blocking(move || tracking.list(params.name.as_deref()).map_err(db_error)).await?;
         json_ok(&sessions)
     }
 

@@ -197,8 +197,9 @@ impl McpUsageStore {
     /// Lists all known clients, most recently active first.
     pub fn list_clients(&self) -> rusqlite::Result<Vec<McpClient>> {
         let conn = self.conn.lock().unwrap_or_else(|e| e.into_inner());
-        let mut stmt =
-            conn.prepare(&format!("{CLIENT_COLUMNS} FROM mcp_clients ORDER BY last_seen_ms DESC"))?;
+        let mut stmt = conn.prepare(&format!(
+            "{CLIENT_COLUMNS} FROM mcp_clients ORDER BY last_seen_ms DESC"
+        ))?;
         let rows = stmt.query_map([], client_from_row)?;
         rows.collect()
     }
@@ -209,7 +210,11 @@ impl McpUsageStore {
         let conn = self.conn.lock().unwrap_or_else(|e| e.into_inner());
 
         let client = conn
-            .query_row(&format!("{CLIENT_COLUMNS} FROM mcp_clients WHERE id = ?1"), [id], client_from_row)
+            .query_row(
+                &format!("{CLIENT_COLUMNS} FROM mcp_clients WHERE id = ?1"),
+                [id],
+                client_from_row,
+            )
             .optional()?;
 
         let Some(client) = client else {

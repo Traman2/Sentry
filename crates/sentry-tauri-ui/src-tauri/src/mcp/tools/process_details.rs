@@ -1,8 +1,8 @@
 //! Inspecting one process: its working directory, root, and environment.
 
 use rmcp::{
-    ErrorData as McpError, handler::server::wrapper::Parameters, model::CallToolResult, tool,
-    tool_router,
+    handler::server::wrapper::Parameters, model::CallToolResult, tool, tool_router,
+    ErrorData as McpError,
 };
 use serde::Serialize;
 

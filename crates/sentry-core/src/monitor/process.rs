@@ -196,7 +196,9 @@ pub fn kill(system: &System, pid: u32, signal: Option<Signal>) -> KillOutcome {
         Some(true) => (true, format!("sent {signal:?} to {name} (pid {pid})")),
         Some(false) => (
             false,
-            format!("the OS refused to deliver {signal:?} to {name} (pid {pid}) — it may be protected or already exiting"),
+            format!(
+                "the OS refused to deliver {signal:?} to {name} (pid {pid}) — it may be protected or already exiting"
+            ),
         ),
         None => (
             false,

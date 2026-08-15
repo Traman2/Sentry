@@ -29,14 +29,13 @@ use std::time::{Duration, Instant};
 
 use axum::extract::ConnectInfo;
 use rmcp::{
-    ErrorData as McpError, RoleServer, ServerHandler,
     handler::server::router::tool::ToolRouter,
     handler::server::tool::ToolCallContext,
     model::{
         CallToolRequestParams, CallToolResponse, Implementation, ServerCapabilities, ServerInfo,
     },
     service::RequestContext,
-    tool_handler,
+    tool_handler, ErrorData as McpError, RoleServer, ServerHandler,
 };
 use sentry_core::{
     CallStatus, ChatStore, ClientIdentity, HistoryStore, McpUsageStore, Monitor, TrackingStore,
@@ -45,7 +44,7 @@ use tauri::{AppHandle, Emitter};
 use tools::build_tool_router;
 
 pub use events::{Event, EventBus};
-pub use server::{McpStatus, start};
+pub use server::{start, McpStatus};
 
 /// Emitted whenever an MCP tool call is recorded, so the frontend's usage panel can refresh
 /// rather than wait out a polling interval — same mechanism as `EVENT_CHAT_UPDATED`.
@@ -187,7 +186,10 @@ impl ServerHandler for SentryMcp {
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResponse, McpError> {
         let started = Instant::now();
-        let client_info = context.peer.peer_info().map(|info| info.client_info.clone());
+        let client_info = context
+            .peer
+            .peer_info()
+            .map(|info| info.client_info.clone());
         let remote_port = context
             .extensions
             .get::<axum::http::request::Parts>()
@@ -202,8 +204,15 @@ impl ServerHandler for SentryMcp {
         let tcc = ToolCallContext::new(self, request, context);
         let result = self.tool_router.call(tcc).await;
 
-        self.log_tool_call(client_info, remote_port, tool_name, params_json, &result, started.elapsed())
-            .await;
+        self.log_tool_call(
+            client_info,
+            remote_port,
+            tool_name,
+            params_json,
+            &result,
+            started.elapsed(),
+        )
+        .await;
 
         result
     }

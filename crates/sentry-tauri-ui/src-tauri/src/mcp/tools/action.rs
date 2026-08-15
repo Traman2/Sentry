@@ -1,14 +1,14 @@
 //! The one tool that changes the machine rather than just reading it.
 
 use rmcp::{
-    ErrorData as McpError, handler::server::wrapper::Parameters, model::CallToolResult, tool,
-    tool_router,
+    handler::server::wrapper::Parameters, model::CallToolResult, tool, tool_router,
+    ErrorData as McpError,
 };
 use tauri::Emitter;
 
 use super::helpers::{blocking, json_ok, tool_error};
-use crate::mcp::SentryMcp;
 use crate::mcp::types::kill_guard;
+use crate::mcp::SentryMcp;
 
 pub const EVENT_PROCESSES_CHANGED: &str = "mcp://processes-changed";
 

@@ -1,8 +1,8 @@
 //! Whole-machine state: the summary and the per-category listings below it.
 
 use rmcp::{
-    ErrorData as McpError, handler::server::wrapper::Parameters, model::CallToolResult, tool,
-    tool_router,
+    handler::server::wrapper::Parameters, model::CallToolResult, tool, tool_router,
+    ErrorData as McpError,
 };
 
 use super::helpers::{blocking, json_ok};

@@ -48,13 +48,21 @@ pub fn identify(identity: &ClientIdentity) -> (String, String, String) {
         .map(str::trim)
         .filter(|n| !n.is_empty() && !is_generic_protocol_name(n));
 
-    let fallback = identity.process_name.as_deref().map(str::trim).filter(|n| !n.is_empty());
+    let fallback = identity
+        .process_name
+        .as_deref()
+        .map(str::trim)
+        .filter(|n| !n.is_empty());
 
     let identifying_name = protocol_name.or(fallback);
 
     let key = identifying_name.unwrap_or("unknown").to_string();
     let display_name = identifying_name.unwrap_or("Unknown client").to_string();
-    let kind = classify(protocol_name, identity.process_name.as_deref(), identity.process_command.as_deref());
+    let kind = classify(
+        protocol_name,
+        identity.process_name.as_deref(),
+        identity.process_command.as_deref(),
+    );
 
     (key, display_name, kind)
 }
@@ -63,7 +71,11 @@ pub fn identify(identity: &ClientIdentity) -> (String, String, String) {
 /// so a client that only self-identifies weakly (e.g. a generic process name) can still be
 /// caught by a distinctive command line, and vice versa. No match is `"unknown"` — this never
 /// prevents a client from being recorded, it only affects its badge.
-fn classify(protocol_name: Option<&str>, process_name: Option<&str>, process_command: Option<&str>) -> String {
+fn classify(
+    protocol_name: Option<&str>,
+    process_name: Option<&str>,
+    process_command: Option<&str>,
+) -> String {
     let haystack = format!(
         "{} {} {}",
         protocol_name.unwrap_or_default(),

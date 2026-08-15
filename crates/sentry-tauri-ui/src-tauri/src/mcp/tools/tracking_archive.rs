@@ -1,16 +1,16 @@
 //! Ending a tracking session (archiving it to disk) and reading that archive back.
 
 use rmcp::{
-    ErrorData as McpError, handler::server::wrapper::Parameters, model::CallToolResult, tool,
-    tool_router,
+    handler::server::wrapper::Parameters, model::CallToolResult, tool, tool_router,
+    ErrorData as McpError,
 };
 use tauri::Manager;
 
 use super::helpers::{blocking, default_max_points, json_ok, tool_error};
 use super::tracking::TrackedIdParams;
 use crate::archive;
-use crate::mcp::SentryMcp;
 use crate::mcp::types::downsample_process;
+use crate::mcp::SentryMcp;
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct TrackedArchiveParams {
@@ -40,10 +40,9 @@ impl SentryMcp {
         let history = self.history.clone();
         let id = params.id;
 
-        let result = blocking(move || {
-            Ok(archive::end_and_archive(&tracking, &history, &data_dir, id))
-        })
-        .await?;
+        let result =
+            blocking(move || Ok(archive::end_and_archive(&tracking, &history, &data_dir, id)))
+                .await?;
 
         match result {
             Ok(tracked) => json_ok(&tracked),

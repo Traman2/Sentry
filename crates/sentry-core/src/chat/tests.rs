@@ -118,7 +118,9 @@ fn append_message_bumps_the_space_to_the_front_of_the_list() {
     // tiebreaker, so without this the two writes can land in the same millisecond and the
     // resulting order is genuinely undefined rather than wrong.
     std::thread::sleep(std::time::Duration::from_millis(2));
-    store.append_message(second.id, "assistant", "pong", None).unwrap();
+    store
+        .append_message(second.id, "assistant", "pong", None)
+        .unwrap();
 
     let listed = store.list_chat_spaces().unwrap();
     assert_eq!(listed[0].id, second.id);
@@ -128,7 +130,11 @@ fn append_message_bumps_the_space_to_the_front_of_the_list() {
 #[test]
 fn append_message_errors_on_a_missing_chat_space() {
     let store = ChatStore::open_in_memory().unwrap();
-    assert!(store.append_message(999, "assistant", "nobody home", None).is_err());
+    assert!(
+        store
+            .append_message(999, "assistant", "nobody home", None)
+            .is_err()
+    );
 }
 
 #[test]
@@ -204,7 +210,12 @@ fn interrupt_if_awaiting_is_a_no_op_once_a_reply_has_landed() {
 #[test]
 fn interrupt_if_awaiting_returns_none_for_a_missing_chat_space() {
     let store = ChatStore::open_in_memory().unwrap();
-    assert!(store.interrupt_if_awaiting(999, "Process interrupted.").unwrap().is_none());
+    assert!(
+        store
+            .interrupt_if_awaiting(999, "Process interrupted.")
+            .unwrap()
+            .is_none()
+    );
 }
 
 #[test]

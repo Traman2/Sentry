@@ -1,13 +1,13 @@
 //! Listing and finding processes. See `process_details` for inspecting one.
 
 use rmcp::{
-    ErrorData as McpError, handler::server::wrapper::Parameters, model::CallToolResult, tool,
-    tool_router,
+    handler::server::wrapper::Parameters, model::CallToolResult, tool, tool_router,
+    ErrorData as McpError,
 };
 
 use super::helpers::{blocking, json_ok};
+use crate::mcp::types::{page_processes, ProcessPage, ProcessSort};
 use crate::mcp::SentryMcp;
-use crate::mcp::types::{ProcessPage, ProcessSort, page_processes};
 
 fn default_limit() -> usize {
     20

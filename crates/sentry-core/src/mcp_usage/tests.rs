@@ -1,6 +1,6 @@
+use super::McpUsageStore;
 use super::identify::ClientIdentity;
 use super::store::CallStatus;
-use super::McpUsageStore;
 
 fn claude_code() -> ClientIdentity {
     ClientIdentity {
@@ -26,7 +26,14 @@ fn python_agent() -> ClientIdentity {
 fn record_call_creates_a_new_client_on_first_call() {
     let store = McpUsageStore::open_in_memory().unwrap();
     let (client, call) = store
-        .record_call(&claude_code(), "list_processes", Some("{}"), CallStatus::Ok, 12, None)
+        .record_call(
+            &claude_code(),
+            "list_processes",
+            Some("{}"),
+            CallStatus::Ok,
+            12,
+            None,
+        )
         .unwrap();
 
     assert_eq!(client.key, "claude-code");
@@ -41,10 +48,24 @@ fn record_call_creates_a_new_client_on_first_call() {
 fn repeated_calls_from_the_same_client_reuse_its_row_and_bump_call_count() {
     let store = McpUsageStore::open_in_memory().unwrap();
     let (first, _) = store
-        .record_call(&claude_code(), "list_processes", None, CallStatus::Ok, 10, None)
+        .record_call(
+            &claude_code(),
+            "list_processes",
+            None,
+            CallStatus::Ok,
+            10,
+            None,
+        )
         .unwrap();
     let (second, _) = store
-        .record_call(&claude_code(), "get_system_summary", None, CallStatus::Ok, 8, None)
+        .record_call(
+            &claude_code(),
+            "get_system_summary",
+            None,
+            CallStatus::Ok,
+            8,
+            None,
+        )
         .unwrap();
 
     assert_eq!(first.id, second.id);
@@ -58,10 +79,24 @@ fn repeated_calls_from_the_same_client_reuse_its_row_and_bump_call_count() {
 fn distinct_clients_get_distinct_rows() {
     let store = McpUsageStore::open_in_memory().unwrap();
     store
-        .record_call(&claude_code(), "list_processes", None, CallStatus::Ok, 10, None)
+        .record_call(
+            &claude_code(),
+            "list_processes",
+            None,
+            CallStatus::Ok,
+            10,
+            None,
+        )
         .unwrap();
     store
-        .record_call(&python_agent(), "get_system_summary", None, CallStatus::Ok, 10, None)
+        .record_call(
+            &python_agent(),
+            "get_system_summary",
+            None,
+            CallStatus::Ok,
+            10,
+            None,
+        )
         .unwrap();
 
     let clients = store.list_clients().unwrap();
@@ -74,11 +109,25 @@ fn distinct_clients_get_distinct_rows() {
 fn list_clients_orders_most_recently_active_first() {
     let store = McpUsageStore::open_in_memory().unwrap();
     let (first, _) = store
-        .record_call(&claude_code(), "list_processes", None, CallStatus::Ok, 10, None)
+        .record_call(
+            &claude_code(),
+            "list_processes",
+            None,
+            CallStatus::Ok,
+            10,
+            None,
+        )
         .unwrap();
     std::thread::sleep(std::time::Duration::from_millis(2));
     let (second, _) = store
-        .record_call(&python_agent(), "get_system_summary", None, CallStatus::Ok, 10, None)
+        .record_call(
+            &python_agent(),
+            "get_system_summary",
+            None,
+            CallStatus::Ok,
+            10,
+            None,
+        )
         .unwrap();
 
     let listed = store.list_clients().unwrap();
@@ -90,11 +139,25 @@ fn list_clients_orders_most_recently_active_first() {
 fn get_client_usage_returns_calls_newest_first() {
     let store = McpUsageStore::open_in_memory().unwrap();
     let (client, _) = store
-        .record_call(&claude_code(), "list_processes", None, CallStatus::Ok, 10, None)
+        .record_call(
+            &claude_code(),
+            "list_processes",
+            None,
+            CallStatus::Ok,
+            10,
+            None,
+        )
         .unwrap();
     std::thread::sleep(std::time::Duration::from_millis(2));
     store
-        .record_call(&claude_code(), "kill_process", None, CallStatus::Ok, 5, None)
+        .record_call(
+            &claude_code(),
+            "kill_process",
+            None,
+            CallStatus::Ok,
+            5,
+            None,
+        )
         .unwrap();
 
     let detail = store.get_client_usage(client.id).unwrap().unwrap();
@@ -108,7 +171,14 @@ fn get_client_usage_returns_calls_newest_first() {
 fn delete_client_removes_it_and_its_calls() {
     let store = McpUsageStore::open_in_memory().unwrap();
     let (client, _) = store
-        .record_call(&claude_code(), "list_processes", None, CallStatus::Ok, 10, None)
+        .record_call(
+            &claude_code(),
+            "list_processes",
+            None,
+            CallStatus::Ok,
+            10,
+            None,
+        )
         .unwrap();
 
     assert!(store.delete_client(client.id).unwrap());
@@ -144,7 +214,10 @@ fn protocol_error_records_the_error_message() {
 
     let detail = store.get_client_usage(client.id).unwrap().unwrap();
     assert_eq!(detail.calls[0].status, "protocol_error");
-    assert_eq!(detail.calls[0].error_message.as_deref(), Some("method not found"));
+    assert_eq!(
+        detail.calls[0].error_message.as_deref(),
+        Some("method not found")
+    );
     assert_eq!(call.status, "protocol_error");
 }
 
@@ -153,7 +226,14 @@ fn params_json_longer_than_the_cap_is_truncated() {
     let store = McpUsageStore::open_in_memory().unwrap();
     let huge = "x".repeat(super::store::MAX_PARAMS_JSON_LEN + 500);
     let (_, call) = store
-        .record_call(&claude_code(), "list_processes", Some(&huge), CallStatus::Ok, 1, None)
+        .record_call(
+            &claude_code(),
+            "list_processes",
+            Some(&huge),
+            CallStatus::Ok,
+            1,
+            None,
+        )
         .unwrap();
 
     let stored = call.params_json.unwrap();
