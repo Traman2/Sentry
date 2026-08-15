@@ -45,10 +45,11 @@ pub struct ProcessPage {
 }
 
 /// How to order [`ProcessPage`] results.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize, schemars::JsonSchema)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, serde::Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ProcessSort {
     /// Highest CPU first — the default, and what "what's slowing my machine down" means.
+    #[default]
     Cpu,
     /// Highest resident memory first.
     Memory,
@@ -56,12 +57,6 @@ pub enum ProcessSort {
     Disk,
     /// Alphabetical by process name.
     Name,
-}
-
-impl Default for ProcessSort {
-    fn default() -> Self {
-        Self::Cpu
-    }
 }
 
 /// Filters, sorts, and pages `rows` into a [`ProcessPage`].
@@ -98,14 +93,11 @@ pub fn page_processes(
         ProcessSort::Cpu => {
             matched.sort_by(|a, b| b.cpu_usage_percent.total_cmp(&a.cpu_usage_percent))
         }
-        ProcessSort::Memory => matched.sort_by(|a, b| b.memory_bytes.cmp(&a.memory_bytes)),
-        ProcessSort::Disk => matched.sort_by(|a, b| {
-            let rate = |r: &ProcessRow| r.disk_read_bytes_per_sec + r.disk_written_bytes_per_sec;
-            rate(b).cmp(&rate(a))
+        ProcessSort::Memory => matched.sort_by_key(|r| std::cmp::Reverse(r.memory_bytes)),
+        ProcessSort::Disk => matched.sort_by_key(|r| {
+            std::cmp::Reverse(r.disk_read_bytes_per_sec + r.disk_written_bytes_per_sec)
         }),
-        ProcessSort::Name => {
-            matched.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()))
-        }
+        ProcessSort::Name => matched.sort_by_key(|r| r.name.to_lowercase()),
     }
 
     let total_matched = matched.len();
