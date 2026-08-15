@@ -6,7 +6,7 @@ use std::sync::Arc;
 use rmcp::transport::streamable_http_server::{
     StreamableHttpServerConfig, StreamableHttpService, session::local::LocalSessionManager,
 };
-use sentry_core::{ChatStore, HistoryStore, TrackingStore};
+use sentry_core::{ChatStore, HistoryStore, McpUsageStore, TrackingStore};
 use serde::Serialize;
 use tauri::AppHandle;
 use tokio::net::TcpListener;
@@ -60,6 +60,7 @@ pub async fn start(
     history: Arc<HistoryStore>,
     chat: Arc<ChatStore>,
     tracking: Arc<TrackingStore>,
+    usage: Arc<McpUsageStore>,
     bus: EventBus,
     initial_model: String,
 ) -> std::io::Result<McpStatus> {
@@ -75,7 +76,7 @@ pub async fn start(
         })?;
 
     let app_for_events = app.clone();
-    let handler = SentryMcp::new(history, chat, tracking, app);
+    let handler = SentryMcp::new(history, chat, tracking, usage, app);
 
     // rmcp calls this factory once per session, so the handler must be cheap to clone —
     // every field in SentryMcp is an Arc or an AppHandle for exactly this reason.
@@ -105,7 +106,11 @@ pub async fn start(
         );
 
     tauri::async_runtime::spawn(async move {
-        if let Err(e) = axum::serve(listener, router).await {
+        // `with_connect_info` is what makes `ConnectInfo<SocketAddr>` available inside a
+        // tool call's `RequestContext.extensions` (via the HTTP `Parts` rmcp injects there)
+        // — see `SentryMcp::call_tool`, which resolves it to a pid for usage logging.
+        let make_service = router.into_make_service_with_connect_info::<SocketAddr>();
+        if let Err(e) = axum::serve(listener, make_service).await {
             eprintln!("sentry-mcp: server stopped: {e}");
         }
     });

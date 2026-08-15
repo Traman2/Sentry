@@ -13,8 +13,10 @@
 //! - [`components`] — one row per hardware temperature sensor, where available.
 //! - [`users`] — one row per system user account.
 //! - [`units`] — shared byte/percentage formatting helpers.
+//! - [`connections`] — resolving a loopback TCP peer to its owning process.
 
 pub mod components;
+pub mod connections;
 pub mod disk;
 pub mod network;
 pub mod process;
@@ -26,6 +28,7 @@ pub mod units;
 pub mod users;
 
 pub use components::ComponentMetrics;
+pub use connections::pid_for_loopback_client;
 pub use disk::DiskMetrics;
 pub use network::NetworkInterfaceMetrics;
 pub use process::{KillOutcome, ProcessDetails, ProcessRow};
@@ -40,6 +43,15 @@ use sysinfo::{
     Components, Disks, Networks, Pid, ProcessRefreshKind, ProcessesToUpdate, Signal, System,
     UpdateKind, Users,
 };
+
+/// A process's name and command line, resolved for one specific pid.
+///
+/// See [`Monitor::process_identity`].
+#[derive(Debug, Clone, Serialize)]
+pub struct ProcessIdentity {
+    pub name: String,
+    pub command: String,
+}
 
 /// A single point-in-time capture of the whole machine: system summary, every
 /// process, every network interface, every storage volume, every temperature
@@ -124,6 +136,32 @@ impl Monitor {
                 .with_environ(UpdateKind::Always),
         );
         process::details(&self.system, pid)
+    }
+
+    /// The name and command line of one process, refreshing just that pid first.
+    ///
+    /// Used to label an MCP client's tool calls with the process that made them, resolved
+    /// from a pid found via [`connections::pid_for_loopback_client`]. Deliberately narrow —
+    /// a full [`Monitor::snapshot`] refreshes every process on the machine, which is wasteful
+    /// when a caller only wants one process's identity. The command line (not just the
+    /// executable name) is what lets `mcp_usage::identify` tell the bundled Python agent
+    /// apart from an unrelated `python.exe` some other MCP client happens to run as.
+    pub fn process_identity(&mut self, pid: u32) -> Option<ProcessIdentity> {
+        let sysinfo_pid = Pid::from_u32(pid);
+        self.system.refresh_processes_specifics(
+            ProcessesToUpdate::Some(&[sysinfo_pid]),
+            true,
+            ProcessRefreshKind::new().with_cmd(UpdateKind::Always),
+        );
+        self.system.process(sysinfo_pid).map(|p| ProcessIdentity {
+            name: p.name().to_string_lossy().into_owned(),
+            command: p
+                .cmd()
+                .iter()
+                .map(|arg| arg.to_string_lossy())
+                .collect::<Vec<_>>()
+                .join(" "),
+        })
     }
 
     /// Terminates `pid`, refreshing that one process first so the decision is never made

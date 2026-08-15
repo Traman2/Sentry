@@ -4,9 +4,10 @@ import TestPage from "../tab-pages/TestPage";
 import ResourceMonitor from "../tab-pages/ResourceMonitor";
 import ChatSpace from "../tab-pages/ChatSpace";
 import Track from "../tab-pages/Track";
+import McpClientUsage from "../tab-pages/McpClientUsage";
 
 export interface TabConfig {
-  type: "welcome" | "test" | "resource-monitor" | "chat-space" | "track";
+  type: "welcome" | "test" | "resource-monitor" | "chat-space" | "track" | "mcp-client";
   defaultId: string;
   defaultTitle: string;
   /** Every tab page receives its owning tab's id, so multi-instance tab types
@@ -55,6 +56,13 @@ export const TABS: TabConfig[] = [
     defaultId: "track",
     defaultTitle: "Track",
     component: Track,
+    showInViewMenu: false,
+  },
+  {
+    type: "mcp-client",
+    defaultId: "mcp-client",
+    defaultTitle: "MCP Client",
+    component: McpClientUsage,
     showInViewMenu: false,
   },
 ];

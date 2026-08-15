@@ -41,6 +41,7 @@ body:
     id: client
     attributes:
       label: MCP client used
+      description: Check the desktop app's "MCP Clients" sidebar panel for the exact client, process, and pid Sentry recorded for the call in question, if unsure.
       placeholder: "Python agent, Claude Desktop, custom client, ..."
     validations:
       required: false

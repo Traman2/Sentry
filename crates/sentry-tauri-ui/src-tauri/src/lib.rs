@@ -7,8 +7,9 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use sentry_core::{
-    ChatSpace, ChatSpaceDetail, ChatStore, HistoryStore, KillOutcome, ProcessSamplePoint,
-    SystemSamplePoint, TrackedArchive, TrackedProcess, TrackingStore,
+    ChatSpace, ChatSpaceDetail, ChatStore, HistoryStore, KillOutcome, McpClient, McpClientDetail,
+    McpUsageStore, ProcessSamplePoint, SystemSamplePoint, TrackedArchive, TrackedProcess,
+    TrackingStore,
 };
 use tauri::{AppHandle, Manager, State, Window};
 use tauri_plugin_opener::OpenerExt;
@@ -26,6 +27,9 @@ struct HistoryState(Arc<HistoryStore>);
 /// handles onto the same file with independent WAL views.
 struct ChatState(Arc<ChatStore>);
 struct TrackingState(Arc<TrackingStore>);
+/// Same sharing rationale as `ChatState` — the MCP server writes here directly from
+/// `SentryMcp::call_tool`, and the UI reads the same instance.
+struct McpUsageState(Arc<McpUsageStore>);
 /// `None` until the MCP server finishes binding in `setup`, and if binding fails it stays
 /// `None` — the desktop app is expected to work with no MCP server at all.
 struct McpState(Mutex<Option<McpStatus>>);
@@ -268,6 +272,29 @@ fn interrupt_chat(
         .map_err(|e| e.to_string())
 }
 
+/// Lists every MCP client that has called a tool, most recently active first — backs the
+/// sidebar's MCP Clients panel.
+#[tauri::command]
+fn list_mcp_clients(state: State<McpUsageState>) -> Result<Vec<McpClient>, String> {
+    state.0.list_clients().map_err(|e| e.to_string())
+}
+
+/// Reads one MCP client's identity and its tool-call history, newest first — backs the tab
+/// opened for that client.
+#[tauri::command]
+fn get_mcp_client_usage(
+    state: State<McpUsageState>,
+    id: i64,
+) -> Result<Option<McpClientDetail>, String> {
+    state.0.get_client_usage(id).map_err(|e| e.to_string())
+}
+
+/// Removes an MCP client and its tool-call history — the sidebar's "forget this client".
+#[tauri::command]
+fn delete_mcp_client(state: State<McpUsageState>, id: i64) -> Result<bool, String> {
+    state.0.delete_client(id).map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
@@ -320,10 +347,12 @@ pub fn run() {
             let _recorder = sentry_core::spawn_recorder(history.clone(), HISTORY_RECORD_INTERVAL);
             let chat = Arc::new(ChatStore::open(data_dir.join("chat.sqlite"))?);
             let tracking = Arc::new(TrackingStore::open(data_dir.join("tracking.sqlite"))?);
+            let mcp_usage = Arc::new(McpUsageStore::open(data_dir.join("mcp_usage.sqlite"))?);
 
             app.manage(HistoryState(history.clone()));
             app.manage(ChatState(chat.clone()));
             app.manage(TrackingState(tracking.clone()));
+            app.manage(McpUsageState(mcp_usage.clone()));
 
             // Host the MCP server in this process, sharing the stores just managed above so
             // an agent and the UI read one database. A failure to bind is logged and
@@ -337,6 +366,7 @@ pub fn run() {
                     history,
                     chat,
                     tracking,
+                    mcp_usage,
                     bus,
                     DEFAULT_AGENT_MODEL.to_string(),
                 )
@@ -388,6 +418,9 @@ pub fn run() {
             delete_chat_space,
             send_chat_message,
             interrupt_chat,
+            list_mcp_clients,
+            get_mcp_client_usage,
+            delete_mcp_client,
             write_and_open_file
         ])
         .build(tauri::generate_context!())

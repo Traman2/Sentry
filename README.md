@@ -10,7 +10,7 @@ The workspace is two Rust crates plus one external component:
 
 | Crate / component | What it is |
 | --- | --- |
-| `crates/sentry-core` | Plain Rust library. Wraps `sysinfo` and shapes raw OS data into table-ready rows (processes, disks, network interfaces, system summary). No I/O, no server, no UI — just data collection and formatting. |
+| `crates/sentry-core` | Plain Rust library. Wraps `sysinfo` and shapes raw OS data into table-ready rows (processes, disks, network interfaces, system summary), plus four SQLite-backed stores (recorded history, chat spaces, tracked-process sessions, MCP client/tool-call usage). No network server, no UI — just data collection, persistence, and formatting. |
 | `crates/sentry-tauri-ui` | The desktop app. A Tauri (Rust) shell hosting a React/TypeScript frontend. Renders the process table, tabs, and chat panel — and hosts the MCP server in-process (`src-tauri/src/mcp/`). |
 | Python agent (external) | Not part of this workspace. A LangChain/LangGraph agent running on Groq that connects to the desktop app's MCP endpoint, reasons over the exposed tools, and writes replies back into the chat panel. |
 
@@ -134,6 +134,26 @@ default) — a 24h query would otherwise return ~43,200 samples.
 refreshes that pid and refuses if the name no longer matches, which is what stops a recycled
 pid from redirecting a kill onto an unrelated process. Critical OS processes and Sentry's own
 pid are refused outright unless `force` is set.
+
+### Knowing who's calling
+
+Any MCP client can connect — the bundled Python agent, Claude Code, Claude Desktop, or
+anything else pointed at the loopback endpoint — so every tool call is recorded: which client
+made it, on which tool, from which OS process, and whether it succeeded. Two independent
+signals identify the caller, since either alone can be uninformative:
+
+- **The MCP handshake's `clientInfo`.** Not always meaningful on its own — some clients (the
+  bundled agent's `mcp` Python SDK, and even Claude Code's own Rust MCP client) report their
+  underlying library's name rather than the app's, so a denylist of known-generic values falls
+  back to the second signal instead of keying every such client under the same meaningless
+  string.
+- **The OS process behind the connection.** Both ends of a loopback TCP connection are local
+  sockets, so the OS's own connection table can resolve the client's ephemeral port to a pid,
+  and from there to a process name and command line.
+
+This is app-internal telemetry, not something an agent can read over MCP — it's exposed only
+through Tauri commands, surfaced in the desktop app's **MCP Clients** sidebar panel: one entry
+per distinct client, opening a tab with that client's full tool-call history.
 
 ### Watching a turn happen
 
