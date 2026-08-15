@@ -137,6 +137,8 @@ pid are refused outright unless `force` is set.
 
 ### Knowing who's calling
 
+![Sentry MCP Audit Trail](README_IMAGES/MPC_AUDIT_UI.png)
+
 Any MCP client can connect — the bundled Python agent, Claude Code, Claude Desktop, or
 anything else pointed at the loopback endpoint — so every tool call is recorded: which client
 made it, on which tool, from which OS process, and whether it succeeded. Two independent
