@@ -129,8 +129,9 @@ impl SystemExpertMcp {
             // Both ends of a loopback TCP connection are local sockets, so the OS's own TCP
             // table can tell us which process holds the client's end of it — see
             // `pid_for_loopback_client` for exactly how.
-            let pid = remote_port
-                .and_then(|port| system_expert_core::monitor::pid_for_loopback_client(server::PORT, port));
+            let pid = remote_port.and_then(|port| {
+                system_expert_core::monitor::pid_for_loopback_client(server::PORT, port)
+            });
 
             let (process_name, process_command) = pid
                 .and_then(|pid| {
@@ -219,7 +220,10 @@ impl ServerHandler for SystemExpertMcp {
 
     fn get_info(&self) -> ServerInfo {
         ServerInfo::new(ServerCapabilities::builder().enable_tools().build())
-            .with_server_info(Implementation::new("system-expert-mcp", env!("CARGO_PKG_VERSION")))
+            .with_server_info(Implementation::new(
+                "system-expert-mcp",
+                env!("CARGO_PKG_VERSION"),
+            ))
             .with_instructions(
                 "System-Expert exposes the live state of this machine: processes, CPU/memory/disk/\
                  network, recorded history, tracked sessions, and the desktop app's chat.\n\n\

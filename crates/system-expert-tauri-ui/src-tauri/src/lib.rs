@@ -344,7 +344,8 @@ pub fn run() {
             let history = Arc::new(HistoryStore::open(data_dir.join("history.sqlite"))?);
             // Runs for the process lifetime, independent of whether the frontend is
             // polling `get_snapshot` — see system_expert_core::spawn_recorder.
-            let _recorder = system_expert_core::spawn_recorder(history.clone(), HISTORY_RECORD_INTERVAL);
+            let _recorder =
+                system_expert_core::spawn_recorder(history.clone(), HISTORY_RECORD_INTERVAL);
             let chat = Arc::new(ChatStore::open(data_dir.join("chat.sqlite"))?);
             let tracking = Arc::new(TrackingStore::open(data_dir.join("tracking.sqlite"))?);
             let mcp_usage = Arc::new(McpUsageStore::open(data_dir.join("mcp_usage.sqlite"))?);

@@ -1,8 +1,8 @@
 //! Process rows projected and paged down for a tool result. See the module doc on
 //! [`super`] for why the projection exists at all.
 
-use system_expert_core::ProcessRow;
 use serde::Serialize;
+use system_expert_core::ProcessRow;
 
 /// One process, reduced to what an agent reasons over. Compare
 /// [`system_expert_core::ProcessRow`]'s 30 fields.
